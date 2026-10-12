@@ -42,8 +42,8 @@ import {
 import { useAdminAuth } from '../../context/AuthContext';
 
 export default function Topbar({
-  activeTitle = 'Overview',
-  activePath = '/dashboard',
+  activeTitle = 'LMS Student Portal',
+  activePath = '/lms-credential',
   searchValue = '',
   onSearchChange,
   onOpenMobileNav,
@@ -138,8 +138,9 @@ export default function Topbar({
         subtitle: 'Key training metrics, cohort stats, and placement outcomes',
         path: '/dashboard',
         icon: IconLayoutDashboard,
-        badge: 'Public',
-        badgeColor: 'teal',
+        badge: 'Admin Only',
+        badgeColor: 'indigo',
+        requiresAdmin: true,
       },
       {
         id: 'lms-credential',
@@ -277,8 +278,8 @@ export default function Topbar({
           <div className="breadcrumb">
             <UnstyledButton
               className="breadcrumb-root-link"
-              onClick={() => navigate('/dashboard')}
-              aria-label="Go to Workspace Overview"
+              onClick={() => navigate('/lms-credential')}
+              aria-label="Go to LMS Student Portal"
             >
               Workspace
             </UnstyledButton>
@@ -387,21 +388,7 @@ export default function Topbar({
                 </span>
               </UnstyledButton>
             </Tooltip>
-          ) : (
-            <Tooltip label="Admin Login (Unlock Batches & Students)" withArrow>
-              <Button
-                variant="subtle"
-                color="indigo"
-                size="xs"
-                radius="md"
-                leftSection={<IconLock size={13} />}
-                onClick={() => openLoginModal()}
-                style={{ fontSize: 11.5, fontWeight: 700 }}
-              >
-                Admin Login
-              </Button>
-            </Tooltip>
-          )}
+          ) : null}
 
           {/* Notifications Center Popover */}
           <Popover

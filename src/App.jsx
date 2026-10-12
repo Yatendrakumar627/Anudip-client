@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Drawer } from '@mantine/core';
 import { api } from './api';
@@ -44,6 +44,38 @@ export default function App() {
     </AuthProvider>
   );
 }
+
+// Isolated Desktop Sidebar Component:
+// Encapsulates hover state and renders <aside> so hover expand/collapse
+// NEVER triggers a re-render of AppContent or its heavy table children.
+const DesktopSidebar = React.memo(function DesktopSidebar({
+  orgName,
+  sidebarPinned,
+  onTogglePin,
+  metrics,
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+  const isExpanded = sidebarPinned || isHovered;
+
+  return (
+    <aside
+      className={`desktop-sidebar ${sidebarPinned ? 'pinned' : 'collapsed'} ${
+        isHovered ? 'is-hovered' : ''
+      }`}
+      onMouseEnter={() => !sidebarPinned && setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Sidebar
+        orgName={orgName}
+        isCollapsed={!isExpanded}
+        isHovered={isHovered}
+        isPinned={sidebarPinned}
+        onTogglePin={onTogglePin}
+        metrics={metrics}
+      />
+    </aside>
+  );
+});
 
 function AppContent() {
   const location = useLocation();
@@ -147,15 +179,12 @@ function AppContent() {
     setGlobalSearch(value);
   };
 
-  // Sidebar state: collapsed by default, expandable on hover or via toggle button
+  // Sidebar state: collapsed by default, pinned via toggle button or Ctrl+B
   const [sidebarPinned, setSidebarPinned] = useState(false);
-  const [sidebarHovered, setSidebarHovered] = useState(false);
 
-  const isDesktopSidebarOpen = sidebarPinned || sidebarHovered;
-
-  const toggleSidebarPinned = () => {
+  const toggleSidebarPinned = useCallback(() => {
     setSidebarPinned((prev) => !prev);
-  };
+  }, []);
 
   // Keyboard shortcut: Ctrl+B or Cmd+B to toggle sidebar pin
   useEffect(() => {
@@ -174,25 +203,14 @@ function AppContent() {
 
   const activeMeta = getPageMeta(location.pathname);
 
-  // Real-time workspace metrics for sidebar items
-  const navMetrics = {
+  // Real-time workspace metrics for sidebar items (memoized to eliminate redundant renders)
+  const navMetrics = useMemo(() => ({
     batches: batches?.length || 0,
     students: students?.length || 0,
     sessions: sessions?.length || 0,
     placements: placements?.filter((p) => p.status === 'Placed').length || placements?.length || 0,
     attendance: 'LIVE',
-  };
-
-  const desktopSidebarElement = (
-    <Sidebar
-      orgName={orgName}
-      isCollapsed={!isDesktopSidebarOpen}
-      isHovered={sidebarHovered}
-      isPinned={sidebarPinned}
-      onTogglePin={toggleSidebarPinned}
-      metrics={navMetrics}
-    />
-  );
+  }), [batches?.length, students?.length, sessions?.length, placements]);
 
   const mobileSidebarElement = (
     <Sidebar
@@ -207,16 +225,13 @@ function AppContent() {
 
   return (
     <div className="app-root">
-      {/* Desktop Sidebar */}
-      <aside
-        className={`desktop-sidebar ${sidebarPinned ? 'pinned' : 'collapsed'} ${
-          sidebarHovered ? 'is-hovered' : ''
-        }`}
-        onMouseEnter={() => !sidebarPinned && setSidebarHovered(true)}
-        onMouseLeave={() => setSidebarHovered(false)}
-      >
-        {desktopSidebarElement}
-      </aside>
+      {/* Desktop Sidebar: isolated component so hover expand/collapse never re-renders the App or child views */}
+      <DesktopSidebar
+        orgName={orgName}
+        sidebarPinned={sidebarPinned}
+        onTogglePin={toggleSidebarPinned}
+        metrics={navMetrics}
+      />
 
       {/* Mobile Drawer Navigation */}
       <Drawer
@@ -258,23 +273,28 @@ function AppContent() {
             </div>
           ) : (
             <Routes>
-              {/* Root redirects to /dashboard */}
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              {/* Root redirects to /lms-credential */}
+              <Route path="/" element={<Navigate to="/lms-credential" replace />} />
 
-              {/* Overview / Dashboard */}
+              {/* Overview / Dashboard (ONLY ADMIN ACCESS) */}
               <Route
                 path="/dashboard"
                 element={
-                  <OverviewPage
-                    students={students}
-                    sessions={sessions}
-                    attendance={attendance}
-                    placements={placements}
-                    onAddStudent={() => openCreate('student')}
-                    onAddSession={() => openCreate('session')}
-                    onNavigate={handlePageNavigate}
-                    orgName={orgName}
-                  />
+                  <AdminAccessGate
+                    featureTitle="Workspace Overview"
+                    featureDescription="Viewing overall learner metrics, outcomes, and program statistics requires administrative authorization."
+                  >
+                    <OverviewPage
+                      students={students}
+                      sessions={sessions}
+                      attendance={attendance}
+                      placements={placements}
+                      onAddStudent={() => openCreate('student')}
+                      onAddSession={() => openCreate('session')}
+                      onNavigate={handlePageNavigate}
+                      orgName={orgName}
+                    />
+                  </AdminAccessGate>
                 }
               />
 
@@ -403,7 +423,7 @@ function AppContent() {
               />
 
               {/* Catch-all 404 Route */}
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<Navigate to="/lms-credential" replace />} />
             </Routes>
           )}
 

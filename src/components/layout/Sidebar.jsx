@@ -25,7 +25,7 @@ import {
 import { navItems } from '../../constants/navigation';
 import { useAdminAuth } from '../../context/AuthContext';
 
-export default function Sidebar({
+function Sidebar({
   closeMobile,
   orgName = 'Anudip Foundation',
   isCollapsed = false,
@@ -88,10 +88,10 @@ export default function Sidebar({
           <div
             className="brand-lockup"
             style={{ cursor: 'pointer' }}
-            onClick={() => handleNav('/dashboard')}
+            onClick={() => handleNav('/lms-credential')}
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && handleNav('/dashboard')}
+            onKeyDown={(e) => e.key === 'Enter' && handleNav('/lms-credential')}
           >
             <div className="brand-mark">
               <IconSparkles size={22} stroke={2.2} />
@@ -154,7 +154,7 @@ export default function Sidebar({
                 const Icon = item.icon;
                 const isActive =
                   location.pathname === item.path ||
-                  (item.path === '/dashboard' &&
+                  (item.path === '/lms-credential' &&
                     (location.pathname === '/' || location.pathname === ''));
 
                 const isBeta = Boolean(item.isBeta);
@@ -226,30 +226,27 @@ export default function Sidebar({
                   </UnstyledButton>
                 );
 
-                if (!isExpanded) {
-                  return (
-                    <Tooltip
-                      key={item.id}
-                      label={
-                        isBeta
-                          ? `${item.label} (Beta - Disabled)`
-                          : isLocked
-                          ? `${item.label} (Admin Password Required)`
-                          : badge && !isLive
-                          ? `${item.label} (${badge})`
-                          : item.label
-                      }
-                      position="right"
-                      withArrow
-                      offset={14}
-                      transitionProps={{ duration: 120, transition: 'fade' }}
-                    >
-                      {buttonContent}
-                    </Tooltip>
-                  );
-                }
-
-                return buttonContent;
+                return (
+                  <Tooltip
+                    key={item.id}
+                    disabled={isExpanded}
+                    label={
+                      isBeta
+                        ? `${item.label} (Beta - Disabled)`
+                        : isLocked
+                        ? `${item.label} (Admin Password Required)`
+                        : badge && !isLive
+                        ? `${item.label} (${badge})`
+                        : item.label
+                    }
+                    position="right"
+                    withArrow
+                    offset={14}
+                    transitionProps={{ duration: 120, transition: 'fade' }}
+                  >
+                    {buttonContent}
+                  </Tooltip>
+                );
               })}
             </div>
           );
@@ -283,78 +280,73 @@ export default function Sidebar({
 
         {/* LMS Administrator Access Control Dock */}
         {!isAdmin ? (
-          /* LOCKED STATE: Clean, high-contrast, 1-click direct login button without any popup menu */
-          isExpanded ? (
+          /* LOCKED STATE: Clean, high-contrast, 1-click direct login button */
+          <Tooltip
+            disabled={isExpanded}
+            label="Admin Login (Click to unlock)"
+            position="right"
+            withArrow
+            offset={14}
+          >
             <button
               type="button"
-              className="admin-dock-btn locked"
+              className={isExpanded ? 'admin-dock-btn locked' : 'admin-dock-btn-mini locked'}
               onClick={() => openLoginModal()}
               aria-label="Unlock Administrator Access"
             >
               <div className="admin-dock-icon locked">
-                <IconLock size={17} stroke={2.4} />
+                <IconLock size={isExpanded ? 17 : 18} stroke={isExpanded ? 2.4 : 2.2} />
               </div>
-              <div className="admin-dock-info">
-                <div className="admin-dock-title">Admin Access</div>
-                <div className="admin-dock-subtitle">Locked · Click to login</div>
-              </div>
-              <span className="admin-dock-action-badge">
-                <IconKey size={12} stroke={2.2} />
-                <span>Login</span>
-              </span>
+              {isExpanded && (
+                <>
+                  <div className="admin-dock-info">
+                    <div className="admin-dock-title">Admin Access</div>
+                    <div className="admin-dock-subtitle">Locked · Click to login</div>
+                  </div>
+                  <span className="admin-dock-action-badge">
+                    <IconKey size={12} stroke={2.2} />
+                    <span>Login</span>
+                  </span>
+                </>
+              )}
             </button>
-          ) : (
-            <Tooltip
-              label="Admin Login (Click to unlock)"
-              position="right"
-              withArrow
-              offset={14}
-            >
-              <button
-                type="button"
-                className="admin-dock-btn-mini locked"
-                onClick={() => openLoginModal()}
-                aria-label="Unlock Administrator Access"
-              >
-                <IconLock size={18} stroke={2.2} />
-              </button>
-            </Tooltip>
-          )
+          </Tooltip>
         ) : (
           /* ACTIVE ADMIN STATE: Clean live session card with countdown + direct 1-click lock button */
-          isExpanded ? (
-            <div className="admin-dock-btn active">
-              <div className="admin-dock-icon active">
-                <IconShieldCheck size={18} stroke={2.4} />
-                <span className="admin-pulse-dot" />
-              </div>
-              <div className="admin-dock-info">
-                <div className="admin-dock-title">
-                  {adminName || 'LMS Administrator'}
+          <Tooltip
+            disabled={isExpanded}
+            label={`Admin Active (${formattedRemaining}) · Click to Lock`}
+            position="right"
+            withArrow
+            offset={14}
+          >
+            {isExpanded ? (
+              <div className="admin-dock-btn active">
+                <div className="admin-dock-icon active">
+                  <IconShieldCheck size={18} stroke={2.4} />
+                  <span className="admin-pulse-dot" />
                 </div>
-                <div className="admin-dock-subtitle active">
-                  <span className="admin-status-indicator">● Active</span>
-                  <span className="admin-timer">({formattedRemaining})</span>
+                <div className="admin-dock-info">
+                  <div className="admin-dock-title">
+                    {adminName || 'LMS Administrator'}
+                  </div>
+                  <div className="admin-dock-subtitle active">
+                    <span className="admin-status-indicator">● Active</span>
+                    <span className="admin-timer">({formattedRemaining})</span>
+                  </div>
                 </div>
+                <Tooltip label="Lock Session (Sign Out)" position="top" withArrow>
+                  <button
+                    type="button"
+                    className="admin-dock-logout-btn"
+                    onClick={logout}
+                    aria-label="Lock Admin Session"
+                  >
+                    <IconLogout size={15} stroke={2.2} />
+                  </button>
+                </Tooltip>
               </div>
-              <Tooltip label="Lock Session (Sign Out)" position="top" withArrow>
-                <button
-                  type="button"
-                  className="admin-dock-logout-btn"
-                  onClick={logout}
-                  aria-label="Lock Admin Session"
-                >
-                  <IconLogout size={15} stroke={2.2} />
-                </button>
-              </Tooltip>
-            </div>
-          ) : (
-            <Tooltip
-              label={`Admin Active (${formattedRemaining}) · Click to Lock`}
-              position="right"
-              withArrow
-              offset={14}
-            >
+            ) : (
               <button
                 type="button"
                 className="admin-dock-btn-mini active"
@@ -364,10 +356,12 @@ export default function Sidebar({
                 <IconShieldCheck size={18} stroke={2.2} />
                 <span className="admin-pulse-dot" />
               </button>
-            </Tooltip>
-          )
+            )}
+          </Tooltip>
         )}
       </div>
     </aside>
   );
 }
+
+export default React.memo(Sidebar);

@@ -8,10 +8,10 @@ a{color:inherit}
 .app-root{min-height:100vh;max-width:100vw;width:100%;overflow-x:hidden}
 
 /* Sidebar and Main Layout Architecture */
-.desktop-sidebar{position:fixed;inset:0 auto 0 0;height:100vh;width:72px;background:var(--sidebar);color:#e8edff;z-index:25;transition:width 0.22s cubic-bezier(0.4,0,0.2,1),box-shadow 0.22s ease;overflow:hidden;box-shadow:2px 0 10px rgba(10,16,35,0.08)}
+.desktop-sidebar{position:fixed;inset:0 auto 0 0;height:100vh;width:72px;background:var(--sidebar);color:#e8edff;z-index:25;transition:width 0.18s cubic-bezier(0.2,0,0,1),box-shadow 0.18s ease;overflow:hidden;box-shadow:2px 0 10px rgba(10,16,35,0.08);will-change:width;transform:translateZ(0);backface-visibility:hidden;contain:layout style}
 .desktop-sidebar.pinned,.desktop-sidebar:not(.collapsed){width:252px;z-index:20;box-shadow:none}
 .desktop-sidebar.collapsed:hover,.desktop-sidebar.is-hovered:not(.pinned){width:252px;z-index:60;box-shadow:10px 0 38px rgba(5,10,25,0.55)}
-.main-area{min-height:100vh;margin-left:72px;transition:margin-left 0.22s cubic-bezier(0.4,0,0.2,1);min-width:0;max-width:100%;overflow-x:hidden}
+.main-area{min-height:100vh;margin-left:72px;transition:margin-left 0.18s cubic-bezier(0.2,0,0,1);min-width:0;max-width:100%;overflow-x:hidden;will-change:margin-left}
 .main-area.sidebar-pinned{margin-left:252px}
 
 /* 3-Zone Vertical Layout Container */
@@ -47,7 +47,7 @@ a{color:inherit}
 .nav-group-label{font-size:9px;letter-spacing:1.3px;font-weight:800;color:#6a7896;padding:0 12px 7px;white-space:nowrap}
 .nav-group-mini-divider{height:1px;background:rgba(255,255,255,0.08);margin:6px auto;width:24px}
 
-.nav-item{position:relative;display:flex;align-items:center;gap:11px;width:100%;padding:9.5px 12px;margin:3px 0;border-radius:11px;color:#9aa8c7;font-size:12.5px;font-weight:500;text-align:left;transition:all .18s cubic-bezier(0.4,0,0.2,1);white-space:nowrap}
+.nav-item{position:relative;display:flex;align-items:center;gap:11px;width:100%;padding:9.5px 12px;margin:3px 0;border-radius:11px;color:#9aa8c7;font-size:12.5px;font-weight:500;text-align:left;transition:background-color .15s ease,color .15s ease,transform .15s ease,border-color .15s ease,box-shadow .15s ease;white-space:nowrap}
 .nav-item-collapsed{justify-content:center;padding:9.5px 0;width:48px;margin:3px auto}
 .nav-item:hover{background:rgba(255,255,255,0.06);color:#ffffff;transform:translateX(2px)}
 .nav-item-collapsed:hover{transform:none}
@@ -83,10 +83,10 @@ a{color:inherit}
 .support-copy{font-size:9.5px;color:#94a2bf;line-height:1.45}
 
 /* Sidebar Admin Dock: Simplified, High-Contrast & Clean */
-.admin-dock-btn{width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#edf1ff;cursor:pointer;text-align:left;transition:all .2s cubic-bezier(0.4,0,0.2,1);outline:none}
+.admin-dock-btn{width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#edf1ff;cursor:pointer;text-align:left;transition:background-color .15s ease,border-color .15s ease,transform .15s ease;outline:none}
 .admin-dock-btn.locked:hover{background:rgba(99,102,241,0.15);border-color:rgba(129,140,248,0.45);transform:translateY(-1px)}
 .admin-dock-btn.active{background:rgba(16,185,129,0.08);border-color:rgba(52,211,153,0.28);cursor:default}
-.admin-dock-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;flex-shrink:0;position:relative;transition:all .2s ease}
+.admin-dock-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;flex-shrink:0;position:relative;transition:background-color .15s ease,border-color .15s ease}
 .admin-dock-icon.locked{background:linear-gradient(135deg,rgba(99,102,241,0.25),rgba(79,70,229,0.35));border:1.5px solid rgba(165,180,252,0.45);color:#c7d2fe;box-shadow:0 2px 8px rgba(99,102,241,0.2)}
 .admin-dock-icon.active{background:linear-gradient(135deg,rgba(16,185,129,0.2),rgba(5,150,105,0.3));border:1.5px solid rgba(52,211,153,0.45);color:#6ee7b7;box-shadow:0 2px 8px rgba(16,185,129,0.2)}
 .admin-pulse-dot{position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:#34d399;border:1.5px solid #0f172a;box-shadow:0 0 0 2px rgba(52,211,153,0.3);animation:adminPulse 2s infinite ease-in-out}
@@ -99,9 +99,9 @@ a{color:inherit}
 .admin-timer{color:#94a3b8;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:10px;font-weight:600}
 .admin-dock-action-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;background:linear-gradient(135deg,#4f46e5,#4338ca);color:#ffffff;font-size:10px;font-weight:750;letter-spacing:.3px;box-shadow:0 2px 6px rgba(79,70,229,0.35);flex-shrink:0;transition:transform .15s ease}
 .admin-dock-btn.locked:hover .admin-dock-action-badge{transform:scale(1.05)}
-.admin-dock-logout-btn{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.12);color:#f87171;cursor:pointer;flex-shrink:0;transition:all .15s ease;outline:none}
+.admin-dock-logout-btn{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.12);color:#f87171;cursor:pointer;flex-shrink:0;transition:background-color .15s ease,border-color .15s ease,color .15s ease,transform .15s ease;outline:none}
 .admin-dock-logout-btn:hover{background:#ef4444;color:#ffffff;border-color:#ef4444;transform:scale(1.08)}
-.admin-dock-btn-mini{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;margin:0 auto;cursor:pointer;border:1px solid rgba(255,255,255,0.1);position:relative;transition:all .2s ease;outline:none}
+.admin-dock-btn-mini{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;margin:0 auto;cursor:pointer;border:1px solid rgba(255,255,255,0.1);position:relative;transition:background-color .15s ease,border-color .15s ease,color .15s ease,transform .15s ease;outline:none}
 .admin-dock-btn-mini.locked{background:rgba(99,102,241,0.15);color:#c7d2fe;border-color:rgba(129,140,248,0.35)}
 .admin-dock-btn-mini.locked:hover{background:rgba(99,102,241,0.3);border-color:rgba(165,180,252,0.6);transform:scale(1.05)}
 .admin-dock-btn-mini.active{background:rgba(16,185,129,0.15);color:#6ee7b7;border-color:rgba(52,211,153,0.4)}
@@ -464,12 +464,44 @@ a{color:inherit}
 /* ==========================================================================
    LMS Credential Data Table Typography & Word Visibility Enhancements
    ========================================================================== */
+.lms-table-scroll-frame {
+  width: 100%;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  position: relative;
+}
+
+.lms-table-scroll-frame .mantine-ScrollArea-viewport {
+  max-height: inherit !important;
+}
+
+.lms-table-scroll-frame ::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.lms-table-scroll-frame ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.lms-table-scroll-frame ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.lms-table-scroll-frame ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
 .lms-credential-data-table {
   font-size: 13px !important;
   width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
 }
 
-/* Header Cells: bold, legible, no awkward wrapping or truncation */
+/* Header Cells: sticky, bold, legible, no awkward wrapping or truncation */
 .lms-credential-data-table .lms-th-row th,
 .lms-credential-data-table thead th,
 .lms-th-cell {
@@ -479,9 +511,15 @@ a{color:inherit}
   font-weight: 750 !important;
   letter-spacing: 0.5px !important;
   text-transform: uppercase !important;
-  padding: 12px 14px !important;
+  padding: 8px 14px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  box-sizing: border-box !important;
   white-space: nowrap !important;
   border-bottom: 2px solid #334155 !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
 }
 
 .lms-th-cell span {
@@ -490,14 +528,51 @@ a{color:inherit}
   letter-spacing: 0.5px !important;
 }
 
-/* Body Cells: comfortable font size, no clipping */
+/* Body Rows & Cells: exact 46px row height for 10 rows in frame */
+.lms-credential-data-table tbody tr.clickable-student-row {
+  height: 46px !important;
+  min-height: 46px !important;
+}
+
 .lms-credential-data-table tbody td {
   font-size: 13px !important;
-  padding: 11px 14px !important;
+  height: 46px !important;
+  padding: 5px 14px !important;
+  box-sizing: border-box !important;
   color: #1e293b !important;
   vertical-align: middle !important;
   white-space: nowrap !important;
   line-height: 1.4 !important;
+}
+
+/* Compact mode styles */
+.lms-credential-data-table.is-compact thead th,
+.lms-credential-data-table.is-compact .lms-th-row th {
+  height: 38px !important;
+  padding: 6px 12px !important;
+}
+
+.lms-credential-data-table.is-compact tbody tr.clickable-student-row {
+  height: 40px !important;
+  min-height: 40px !important;
+}
+
+.lms-credential-data-table.is-compact tbody td {
+  height: 40px !important;
+  padding: 4px 12px !important;
+  font-size: 12px !important;
+}
+
+/* Bottom Scroll Hint */
+.lms-table-scroll-hint {
+  padding: 8px 14px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
 }
 
 /* Center-align all headers and cells except student name */
@@ -534,9 +609,46 @@ a{color:inherit}
   justify-content: flex-start !important;
 }
 
+/* Batch Table Scrollable Frame for 10 Rows */
+.batch-table-scroll-frame {
+  width: 100%;
+  position: relative;
+}
+
+.batch-table-scroll-frame .mantine-ScrollArea-viewport {
+  max-height: inherit !important;
+}
+
+.batch-table-scroll-frame ::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.batch-table-scroll-frame ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.batch-table-scroll-frame ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.batch-table-scroll-frame ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.mantine-batch-row {
+  height: 46px !important;
+  min-height: 46px !important;
+  transition: all 0.15s ease;
+}
+
 .mantine-batch-table tbody td {
   font-size: 13px !important;
-  padding: 11px 14px !important;
+  height: 46px !important;
+  padding: 5px 14px !important;
+  box-sizing: border-box !important;
   color: #1e293b !important;
   vertical-align: middle !important;
   white-space: nowrap !important;
@@ -551,9 +663,15 @@ a{color:inherit}
   font-weight: 750 !important;
   letter-spacing: 0.5px !important;
   text-transform: uppercase !important;
-  padding: 12px 14px !important;
+  padding: 8px 14px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  box-sizing: border-box !important;
   white-space: nowrap !important;
   border-bottom: 2px solid #334155 !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
 }
 
 .mantine-batch-table .mantine-Badge-root {

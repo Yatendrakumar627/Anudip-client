@@ -119,22 +119,12 @@ export default function AdminAccessGate({
             <Button
               component={Link}
               to="/lms-credential"
-              variant="subtle"
-              color="gray"
+              variant="light"
+              color="indigo"
               size="xs"
               leftSection={<IconSchool size={14} />}
             >
-              Go to LMS Student Portal
-            </Button>
-            <Button
-              component={Link}
-              to="/dashboard"
-              variant="subtle"
-              color="gray"
-              size="xs"
-              leftSection={<IconArrowLeft size={14} />}
-            >
-              Back to Overview
+              Return to LMS Student Portal
             </Button>
           </Group>
         </Stack>

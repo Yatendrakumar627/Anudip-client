@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <linearGradient id="anudipGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="url(#anudipGrad)" />
+  <path d="M16 7L18.8 13.2L25 16L18.8 18.8L16 25L13.2 18.8L7 16L13.2 13.2L16 7Z" fill="#ffffff" />
+  <circle cx="16" cy="16" r="2.5" fill="#facc15" />
+</svg>

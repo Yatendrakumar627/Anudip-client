@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActionIcon,
   Avatar,
@@ -204,7 +204,47 @@ export default function LmsCohortTable({
     });
   }, [cohort.students, q, restrictedKeys]);
 
-  // 4. Facilitator Quick Actions: Copy all credentials for roster communication
+  // 4. Exact 10-Row Frame Height Measurement: ensures the frame cuts off right after student 10
+  const tableRef = useRef(null);
+  const [frameMaxHeight, setFrameMaxHeight] = useState(isCompact ? 438 : 502);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (!tableRef.current) return;
+      const thead = tableRef.current.querySelector('thead');
+      const rows = tableRef.current.querySelectorAll('tbody tr');
+      if (!thead || rows.length === 0) return;
+
+      if (rows.length <= 10) {
+        setFrameMaxHeight(undefined);
+        return;
+      }
+
+      // Exact 10th row (index 9)
+      const row10 = rows[9];
+      if (row10) {
+        const theadRect = thead.getBoundingClientRect();
+        const row10Rect = row10.getBoundingClientRect();
+        const scrollParent =
+          tableRef.current.closest('.mantine-ScrollArea-viewport') || tableRef.current.parentElement;
+        const currentScroll = scrollParent ? scrollParent.scrollTop : 0;
+        const exactHeight = Math.ceil(row10Rect.bottom - theadRect.top + currentScroll);
+        if (exactHeight > 0) {
+          setFrameMaxHeight(exactHeight);
+        }
+      }
+    };
+
+    updateHeight();
+    const timer = setTimeout(updateHeight, 50);
+    window.addEventListener('resize', updateHeight);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, [matchingStudents.length, isCompact]);
+
+  // 5. Facilitator Quick Actions: Copy all credentials for roster communication
   const handleCopyAllCredentials = () => {
     if (!matchingStudents.length) return;
     const lines = [
@@ -440,17 +480,32 @@ export default function LmsCohortTable({
 
       {/* Table Body */}
       {matchingStudents.length > 0 ? (
-        <ScrollArea type="auto" offsetScrollbars>
-          <Table
-            verticalSpacing={isCompact ? 'xs' : 'sm'}
-            horizontalSpacing="md"
-            withTableBorder
-            withColumnBorders
-            striped
-            highlightOnHover
-            className="lms-credential-data-table"
-            miw={totalTableWidth}
+        <>
+          <ScrollArea
+            type="auto"
+            offsetScrollbars
+            scrollbarSize={8}
+            className="lms-table-scroll-frame"
+            style={{
+              maxHeight:
+                matchingStudents.length > 10
+                  ? frameMaxHeight || (isCompact ? 438 : 502)
+                  : undefined,
+            }}
           >
+            <Table
+              ref={tableRef}
+              stickyHeader
+              stickyHeaderOffset={0}
+              verticalSpacing={isCompact ? 'xs' : 'sm'}
+              horizontalSpacing="md"
+              withTableBorder
+              withColumnBorders
+              striped
+              highlightOnHover
+              className={`lms-credential-data-table ${isCompact ? 'is-compact' : ''}`}
+              miw={totalTableWidth}
+            >
             <Table.Thead>
               <Table.Tr className="lms-th-row">
                 <Table.Th w={55} style={{ width: 55, minWidth: 55 }} ta="center" className="lms-th-cell">
@@ -827,7 +882,16 @@ export default function LmsCohortTable({
             </Table.Tbody>
           </Table>
         </ScrollArea>
-      ) : (
+
+        {matchingStudents.length > 10 && (
+          <div className="lms-table-scroll-hint">
+            <Text size="xs" c="dimmed">
+              Showing 10 learners in frame &bull; Scroll inside the table to view all {matchingStudents.length} learners
+            </Text>
+          </div>
+        )}
+      </>
+    ) : (
         <EmptyState
           title={`No learners found for ${cohort.name}`}
           description={

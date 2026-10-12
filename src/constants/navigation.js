@@ -10,10 +10,10 @@ import {
 } from '@tabler/icons-react';
 
 export const navItems = [
-  { id: 'overview', path: '/dashboard', label: 'Overview', icon: IconLayoutDashboard, group: 'WORKSPACE' },
   { id: 'credentials', path: '/lms-credential', label: 'LMS Portal', icon: IconSchool, group: 'WORKSPACE' },
   { id: 'batches', path: '/batches', label: 'Batches', icon: IconUsersGroup, group: 'WORKSPACE', requiresAdmin: true },
   { id: 'students', path: '/students', label: 'Students', icon: IconUsers, group: 'WORKSPACE', requiresAdmin: true },
+  { id: 'overview', path: '/dashboard', label: 'Overview', icon: IconLayoutDashboard, group: 'WORKSPACE', requiresAdmin: true },
   { id: 'sessions', path: '/sessions', label: 'Training sessions', icon: IconVideo, group: 'WORKSPACE', isBeta: true },
   { id: 'attendance', path: '/attendance', label: 'Attendance', icon: IconCalendarEvent, group: 'WORKSPACE', isBeta: true },
   { id: 'placements', path: '/placements', label: 'Placements', icon: IconBriefcase, group: 'OUTCOMES', isBeta: true },
@@ -72,12 +72,12 @@ export const pageMeta = {
 };
 
 // Helper to resolve metadata from any path (supporting trailing slashes & aliases)
-export function getPageMeta(pathname = '/dashboard') {
-  const cleanPath = pathname.replace(/\/$/, '') || '/dashboard';
+export function getPageMeta(pathname = '/lms-credential') {
+  const cleanPath = pathname.replace(/\/$/, '') || '/lms-credential';
   if (pageMeta[cleanPath]) return pageMeta[cleanPath];
   if (cleanPath === '/lms-credentials' || cleanPath === '/lms-portal') return pageMeta['/lms-credential'];
   if (cleanPath === '/cohorts' || cleanPath === '/student-batches') return pageMeta['/batches'];
   if (cleanPath === '/training-sessions') return pageMeta['/sessions'];
-  if (cleanPath === '/' || cleanPath === '') return pageMeta['/dashboard'];
-  return pageMeta['/dashboard'];
+  if (cleanPath === '/' || cleanPath === '') return pageMeta['/lms-credential'];
+  return pageMeta['/lms-credential'];
 }
