@@ -14,11 +14,14 @@ export default defineConfig({
     },
   },
   build: {
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {
           mantine: ['@mantine/core', '@mantine/hooks', '@mantine/notifications'],
           icons: ['@tabler/icons-react'],
+          xlsx: ['xlsx'],
+          vendor: ['react', 'react-dom', 'react-router-dom', 'papaparse', 'dayjs'],
         },
       },
     },
