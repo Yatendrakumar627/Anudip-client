@@ -30,8 +30,14 @@ import {
   IconArrowsExchange,
   IconFileCheck,
   IconX,
+  IconDownload,
 } from '@tabler/icons-react';
 import { parseSpreadsheetFile, analyzeEnrollmentReport } from '../../utils/enrollmentImporter';
+import {
+  downloadSampleExcelTemplate,
+  downloadSampleCsv,
+  SAMPLE_TEMPLATE_COLUMNS,
+} from '../../utils/sampleExcelGenerator';
 import { showError, showSuccess } from '../../utils/notifications';
 
 export default function ImportEnrollmentModal({
@@ -318,6 +324,70 @@ export default function ImportEnrollmentModal({
                 </Group>
               </Stack>
             )}
+          </Paper>
+        )}
+
+        {/* Sample Excel Helper Section */}
+        {!fileData && (
+          <Paper p="md" radius="md" withBorder bg="#f8fafc" className="sample-excel-helper-box">
+            <Stack gap="xs">
+              <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+                <Group gap="sm" align="center">
+                  <ThemeIcon color="teal" variant="light" size={38} radius="md">
+                    <IconFileSpreadsheet size={22} />
+                  </ThemeIcon>
+                  <div>
+                    <Text size="xs" fw={750} c="dark.7">
+                      Official 16-Column Sample Excel Template
+                    </Text>
+                    <Text size="11px" c="dimmed">
+                      Matches official MIS report format. Download, fill or copy-paste learner rows, and upload.
+                    </Text>
+                  </div>
+                </Group>
+
+                <Group gap="xs" wrap="wrap">
+                  <Button
+                    size="xs"
+                    variant="filled"
+                    color="teal"
+                    leftSection={<IconDownload size={14} />}
+                    onClick={downloadSampleExcelTemplate}
+                  >
+                    Download Sample Excel (.xlsx)
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="default"
+                    leftSection={<IconDownload size={14} />}
+                    onClick={downloadSampleCsv}
+                  >
+                    Download Sample CSV (.csv)
+                  </Button>
+                </Group>
+              </Group>
+
+              {/* Exact 16 columns chip preview */}
+              <Divider my={2} />
+              <div>
+                <Text size="10px" fw={700} c="dimmed" tt="uppercase" mb={4}>
+                  Template Headers (16 Columns in Exact Order):
+                </Text>
+                <Group gap={4} wrap="wrap">
+                  {SAMPLE_TEMPLATE_COLUMNS.map((colName, idx) => (
+                    <Badge
+                      key={colName}
+                      size="xs"
+                      variant="dot"
+                      color={idx < 5 ? 'indigo' : idx === 15 ? 'red' : 'teal'}
+                      styles={{ root: { textTransform: 'none', fontWeight: 600 } }}
+                    >
+                      {idx + 1}. {colName}
+                    </Badge>
+                  ))}
+                </Group>
+              </div>
+            </Stack>
           </Paper>
         )}
 

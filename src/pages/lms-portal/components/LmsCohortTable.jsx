@@ -37,6 +37,23 @@ import { initials, initialsColor, statusColor } from '../../../utils/formatters'
 import { showSuccess } from '../../../utils/notifications';
 import { LMS_LOGIN_URL } from './LmsHeroBanner';
 
+function getLmsColWidth(col) {
+  const normKey = String(col.key || '').toLowerCase().trim();
+  const normLabel = String(col.label || '').toLowerCase().trim();
+
+  if (col.type === 'name' || normKey === 'name' || normLabel === 'student name') return 220;
+  if (col.type === 'email' || normKey === 'email' || normLabel === 'email') return 240;
+  if (col.type === 'lmsUsername' || normKey === 'lmsusername' || normLabel === 'user name' || normLabel === 'lms user id') return 180;
+  if (col.type === 'lmsPassword' || normKey === 'lmspassword' || normLabel === 'password') return 170;
+  if (normKey.includes('disabilitytype') || normLabel.includes('disability type') || normKey.includes('disability')) return 230;
+  if (normKey.includes('percentage') || normLabel.includes('percentage') || normLabel.includes('%')) return 135;
+  if (normKey === 'age' || normLabel === 'age') return 110;
+  if (normKey === 'gender' || normLabel === 'gender') return 120;
+  if (normKey.includes('qualification') || normLabel.includes('qualification')) return 180;
+  if (normKey.includes('phone') || normLabel.includes('phone') || normLabel.includes('mobile')) return 150;
+  return Math.max(150, Number(col.width) || 150);
+}
+
 export default function LmsCohortTable({
   cohort,
   search = '',
@@ -151,6 +168,11 @@ export default function LmsCohortTable({
 
     return cols;
   }, [cohort.columns, cohort.students, restrictedKeys]);
+
+  const totalTableWidth = useMemo(() => {
+    const colsWidth = cohortCols.reduce((sum, col) => sum + getLmsColWidth(col), 0);
+    return Math.max(1200, 60 + 155 + colsWidth);
+  }, [cohortCols]);
 
   // 3. Search and filtering - Strictly never search across restricted fields
   const q = (tableSearch || search).toLowerCase().trim();
@@ -427,15 +449,17 @@ export default function LmsCohortTable({
             striped
             highlightOnHover
             className="lms-credential-data-table"
-            miw={1080}
+            miw={totalTableWidth}
           >
             <Table.Thead>
               <Table.Tr className="lms-th-row">
-                <Table.Th w={55} ta="center" className="lms-th-cell">
+                <Table.Th w={55} style={{ width: 55, minWidth: 55 }} ta="center" className="lms-th-cell">
                   #
                 </Table.Th>
 
                 {cohortCols.map((col) => {
+                  const colWidth = getLmsColWidth(col);
+                  const isName = col.type === 'name';
                   let icon = null;
                   if (col.type === 'name') icon = <IconUser size={13} color="#93c5fd" />;
                   else if (col.type === 'email') icon = <IconMail size={13} color="#93c5fd" />;
@@ -446,9 +470,16 @@ export default function LmsCohortTable({
                   return (
                     <Table.Th
                       key={col.key || col.type}
-                      className="lms-th-cell"
+                      className={`lms-th-cell ${isName ? 'lms-th-name' : ''}`}
+                      ta={isName ? 'left' : 'center'}
+                      style={{ width: colWidth, minWidth: colWidth, whiteSpace: 'nowrap' }}
                     >
-                      <Group gap={6} wrap="nowrap" align="center">
+                      <Group
+                        gap={6}
+                        wrap="nowrap"
+                        align="center"
+                        justify={isName ? 'flex-start' : 'center'}
+                      >
                         {icon}
                         <span>{col.label}</span>
                       </Group>
@@ -458,8 +489,8 @@ export default function LmsCohortTable({
 
                 <Table.Th
                   ta="center"
-                  w={150}
-                  style={{ minWidth: 145 }}
+                  w={155}
+                  style={{ width: 155, minWidth: 155, whiteSpace: 'nowrap' }}
                   className="lms-th-cell lms-th-portal"
                 >
                   <Group gap={6} justify="center" wrap="nowrap" align="center">
@@ -486,15 +517,19 @@ export default function LmsCohortTable({
                     title={`Click row to view ${student.name}'s LMS Pass Card`}
                   >
                     {/* Index */}
-                    <Table.Td ta="center" w={55}>
+                    <Table.Td ta="center" w={55} style={{ width: 55, minWidth: 55 }}>
                       <span className="lms-num-badge">{index + 1}</span>
                     </Table.Td>
 
                     {cohortCols.map((col) => {
                       if (col.type === 'name') {
                         return (
-                          <Table.Td key="name">
-                            <Group gap="sm" wrap="nowrap">
+                          <Table.Td
+                            key="name"
+                            className="lms-td-name"
+                            style={{ width: 220, minWidth: 220, whiteSpace: 'nowrap' }}
+                          >
+                            <Group gap="sm" wrap="nowrap" align="center">
                               <Avatar
                                 color={initialsColor(student.name)}
                                 radius="xl"
@@ -503,8 +538,8 @@ export default function LmsCohortTable({
                                 {initials(student.name)}
                               </Avatar>
                               <div>
-                                <Group gap={6} align="center">
-                                  <Text fw={750} size="sm" c="dark.6">
+                                <Group gap={6} align="center" wrap="nowrap">
+                                  <Text fw={750} size="sm" className="student-name-text">
                                     {student.name}
                                   </Text>
                                   <Tooltip label="Click to view Student Pass Card" withArrow>
@@ -523,8 +558,12 @@ export default function LmsCohortTable({
 
                       if (col.type === 'email') {
                         return (
-                          <Table.Td key="email">
-                            <Text size="xs" c={student.email ? 'dark.4' : 'dimmed'}>
+                          <Table.Td
+                            key="email"
+                            ta="center"
+                            style={{ width: 240, minWidth: 240, whiteSpace: 'nowrap', textAlign: 'center' }}
+                          >
+                            <Text size="sm" fw={500} ta="center" c={student.email ? 'dark.5' : 'dimmed'}>
                               {student.email || <span className="placeholder-cell">—</span>}
                             </Text>
                           </Table.Td>
@@ -533,8 +572,12 @@ export default function LmsCohortTable({
 
                       if (col.type === 'lmsUsername') {
                         return (
-                          <Table.Td key="lmsUsername">
-                            <Group gap="xs" wrap="nowrap" align="center">
+                          <Table.Td
+                            key="lmsUsername"
+                            ta="center"
+                            style={{ width: 180, minWidth: 180, whiteSpace: 'nowrap', textAlign: 'center' }}
+                          >
+                            <Group gap="xs" wrap="nowrap" align="center" justify="center">
                               <code className="lms-code-badge user">{student.lmsUsername}</code>
                               <Tooltip
                                 label={isCopiedUName ? 'Copied!' : 'Copy User Name'}
@@ -563,8 +606,12 @@ export default function LmsCohortTable({
 
                       if (col.type === 'lmsPassword') {
                         return (
-                          <Table.Td key="lmsPassword">
-                            <Group gap="xs" wrap="nowrap" align="center">
+                          <Table.Td
+                            key="lmsPassword"
+                            ta="center"
+                            style={{ width: 170, minWidth: 170, whiteSpace: 'nowrap', textAlign: 'center' }}
+                          >
+                            <Group gap="xs" wrap="nowrap" align="center" justify="center">
                               <code className="lms-code-badge pass">
                                 {isPassRevealed ? student.lmsPassword : '••••••••'}
                               </code>
@@ -654,6 +701,7 @@ export default function LmsCohortTable({
                       const lowerVal = strVal.toLowerCase();
                       const normColKey = String(col.key || '').toLowerCase();
                       const normColLabel = String(col.label || '').toLowerCase();
+                      const colWidth = getLmsColWidth(col);
 
                       // Smart Cell Renderers based on Attribute Types
                       let cellContent = <span className="placeholder-cell">—</span>;
@@ -662,9 +710,10 @@ export default function LmsCohortTable({
                         if (lowerVal === 'yes' || lowerVal === 'no') {
                           cellContent = (
                             <Badge
-                              size="xs"
+                              size="sm"
                               color={lowerVal === 'yes' ? 'teal' : 'red'}
                               variant="light"
+                              style={{ textTransform: 'none', whiteSpace: 'nowrap' }}
                             >
                               {strVal}
                             </Badge>
@@ -673,56 +722,90 @@ export default function LmsCohortTable({
                           cellContent = (
                             <code className="lms-code-badge user">{strVal}</code>
                           );
-                        } else if (normColKey.includes('disabilitytype') || normColLabel.includes('disability type')) {
+                        } else if (normColKey.includes('disabilitytype') || normColLabel.includes('disability type') || normColKey.includes('disability')) {
                           cellContent = (
-                            <Badge size="xs" variant="light" color="grape">
+                            <Badge
+                              size="sm"
+                              variant="light"
+                              color="grape"
+                              style={{ textTransform: 'none', whiteSpace: 'nowrap', maxWidth: 'none' }}
+                            >
                               {strVal}
                             </Badge>
                           );
                         } else if (normColKey.includes('percentage') || normColLabel.includes('percentage') || normColLabel.includes('%')) {
                           cellContent = (
-                            <Badge size="xs" variant="light" color="teal">
+                            <Badge
+                              size="sm"
+                              variant="light"
+                              color="teal"
+                              style={{ textTransform: 'none', whiteSpace: 'nowrap' }}
+                            >
                               {strVal.replace('%', '')}%
                             </Badge>
                           );
                         } else if (normColKey === 'age' || normColLabel === 'age') {
                           cellContent = (
-                            <Badge size="xs" variant="light" color="blue">
+                            <Badge
+                              size="sm"
+                              variant="light"
+                              color="blue"
+                              style={{ textTransform: 'none', whiteSpace: 'nowrap' }}
+                            >
                               {strVal} yrs
                             </Badge>
                           );
                         } else if (normColKey === 'gender' || normColLabel === 'gender') {
                           cellContent = (
                             <Badge
-                              size="xs"
+                              size="sm"
                               variant="light"
                               color={lowerVal === 'female' ? 'pink' : 'cyan'}
+                              style={{ textTransform: 'none', whiteSpace: 'nowrap' }}
                             >
                               {strVal}
                             </Badge>
                           );
                         } else if (normColKey.includes('qualification') || normColLabel.includes('qualification')) {
                           cellContent = (
-                            <Badge size="xs" variant="outline" color="dark">
+                            <Badge
+                              size="sm"
+                              variant="outline"
+                              color="dark"
+                              style={{ textTransform: 'none', whiteSpace: 'nowrap' }}
+                            >
                               {strVal}
                             </Badge>
                           );
                         } else {
                           cellContent = (
-                            <Text size="xs" fw={600} c="dark.4">
+                            <Text size="sm" fw={600} c="dark.5" ta="center" style={{ whiteSpace: 'nowrap' }}>
                               {strVal}
                             </Text>
                           );
                         }
                       }
 
-                      return <Table.Td key={col.key || col.label}>{cellContent}</Table.Td>;
+                      return (
+                        <Table.Td
+                          key={col.key || col.label}
+                          ta="center"
+                          style={{
+                            width: colWidth,
+                            minWidth: colWidth,
+                            whiteSpace: 'nowrap',
+                            textAlign: 'center',
+                          }}
+                        >
+                          {cellContent}
+                        </Table.Td>
+                      );
                     })}
 
                     {/* Direct LMS Login */}
                     <Table.Td
                       ta="center"
-                      style={{ width: 150, minWidth: 145 }}
+                      style={{ width: 155, minWidth: 155, whiteSpace: 'nowrap' }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Button

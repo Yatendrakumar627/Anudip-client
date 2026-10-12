@@ -61,6 +61,11 @@ import dayjs from 'dayjs';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import ImportEnrollmentModal from './ImportEnrollmentModal';
+import {
+  downloadSampleRosterExcel,
+  downloadOfficialEnrollmentReportExcel,
+  downloadSampleCsv,
+} from '../../utils/sampleExcelGenerator';
 import { batchStatuses, fields } from '../../data';
 import { statusColor } from '../../utils/formatters';
 import { showError, showSuccess, showWarning } from '../../utils/notifications';
@@ -69,17 +74,17 @@ import { Link } from 'react-router-dom';
 
 // Static Column definitions & Base mappings
 const BASE_COLS = [
-  { key: 'name', label: 'Student Name', type: 'text', width: 200, required: true },
-  { key: 'email', label: 'Email', type: 'email', width: 220 },
-  { key: 'lmsUsername', label: 'User Name', type: 'text', width: 150 },
-  { key: 'lmsPassword', label: 'Password', type: 'text', width: 140 },
+  { key: 'name', label: 'Student Name', type: 'text', width: 220, required: true },
+  { key: 'email', label: 'Email', type: 'email', width: 240 },
+  { key: 'lmsUsername', label: 'User Name', type: 'text', width: 180 },
+  { key: 'lmsPassword', label: 'Password', type: 'text', width: 170 },
 ];
 
 const BASE_COL_MAP = {
-  name: { key: 'name', label: 'Student Name', type: 'text', width: 200, required: true },
-  email: { key: 'email', label: 'Email', type: 'email', width: 220 },
-  lmsusername: { key: 'lmsUsername', label: 'User Name', type: 'text', width: 150 },
-  lmspassword: { key: 'lmsPassword', label: 'Password', type: 'text', width: 140 },
+  name: { key: 'name', label: 'Student Name', type: 'text', width: 220, required: true },
+  email: { key: 'email', label: 'Email', type: 'email', width: 240 },
+  lmsusername: { key: 'lmsUsername', label: 'User Name', type: 'text', width: 180 },
+  lmspassword: { key: 'lmsPassword', label: 'Password', type: 'text', width: 170 },
 };
 
 const BASE_COL_BY_LABEL = {
@@ -114,7 +119,7 @@ const CellDisplay = React.memo(function CellDisplay({ col, cellValue }) {
 
   if (colKey === 'lmsUsername' && cellValue) {
     return (
-      <Group gap={6} wrap="nowrap">
+      <Group gap={6} wrap="nowrap" justify="center">
         <code className="lms-code-badge user">{cellValue}</code>
         <Tooltip label="Copy User Name" withArrow>
           <ActionIcon
@@ -138,7 +143,7 @@ const CellDisplay = React.memo(function CellDisplay({ col, cellValue }) {
 
   if (colKey === 'lmsPassword' && cellValue) {
     return (
-      <Group gap={6} wrap="nowrap">
+      <Group gap={6} wrap="nowrap" justify="center">
         <code className="lms-code-badge pass">{cellValue}</code>
         <Tooltip label="Copy Password" withArrow>
           <ActionIcon
@@ -165,7 +170,12 @@ const CellDisplay = React.memo(function CellDisplay({ col, cellValue }) {
 
   if (lowerVal === 'yes' || lowerVal === 'no') {
     return (
-      <Badge size="xs" color={lowerVal === 'yes' ? 'teal' : 'red'} variant="light">
+      <Badge
+        size="sm"
+        color={lowerVal === 'yes' ? 'teal' : 'red'}
+        variant="light"
+        style={{ textTransform: 'none', whiteSpace: 'nowrap' }}
+      >
         {strVal}
       </Badge>
     );
@@ -173,7 +183,12 @@ const CellDisplay = React.memo(function CellDisplay({ col, cellValue }) {
 
   if (colKey === 'status' || colKey === 'placementStatus') {
     return cellValue ? (
-      <Badge size="xs" color={statusColor(cellValue)} variant="light">
+      <Badge
+        size="sm"
+        color={statusColor(cellValue)}
+        variant="light"
+        style={{ textTransform: 'none', whiteSpace: 'nowrap' }}
+      >
         {cellValue}
       </Badge>
     ) : (
@@ -183,8 +198,8 @@ const CellDisplay = React.memo(function CellDisplay({ col, cellValue }) {
 
   if (colType === 'phone' && cellValue) {
     return (
-      <Group gap={4} wrap="nowrap">
-        <Text size="xs" fw={500} c="dark.4">
+      <Group gap={4} wrap="nowrap" justify="center">
+        <Text size="sm" fw={500} c="dark.5" style={{ whiteSpace: 'nowrap' }}>
           {cellValue}
         </Text>
         <Tooltip label={`Call ${cellValue}`} withArrow>
@@ -196,7 +211,7 @@ const CellDisplay = React.memo(function CellDisplay({ col, cellValue }) {
             href={`tel:${String(cellValue).replace(/[^0-9+]/g, '')}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <IconPhone size={11} />
+            <IconPhone size={12} />
           </ActionIcon>
         </Tooltip>
       </Group>
@@ -205,8 +220,8 @@ const CellDisplay = React.memo(function CellDisplay({ col, cellValue }) {
 
   if (colType === 'email' && cellValue) {
     return (
-      <Group gap={4} wrap="nowrap">
-        <Text size="xs" fw={500} c="dark.4" truncate maw={170}>
+      <Group gap={4} wrap="nowrap" justify="center">
+        <Text size="sm" fw={500} c="dark.5" style={{ whiteSpace: 'nowrap' }}>
           {cellValue}
         </Text>
         <Tooltip label={`Email ${cellValue}`} withArrow>
@@ -218,7 +233,7 @@ const CellDisplay = React.memo(function CellDisplay({ col, cellValue }) {
             href={`mailto:${cellValue}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <IconMail size={11} />
+            <IconMail size={12} />
           </ActionIcon>
         </Tooltip>
       </Group>
@@ -235,9 +250,15 @@ const CellDisplay = React.memo(function CellDisplay({ col, cellValue }) {
     else if (lowerVal === 'active' || lowerVal === 'yes' || lowerVal === 'completed') badgeColor = 'teal';
     else if (lowerVal === 'inactive' || lowerVal === 'no' || lowerVal === 'dropped') badgeColor = 'red';
     else if (lowerVal === 'pending' || lowerVal === 'on hold') badgeColor = 'orange';
+    else if (colKey.toLowerCase().includes('disability') || colLabel.toLowerCase().includes('disability')) badgeColor = 'grape';
 
     return (
-      <Badge size="xs" color={badgeColor} variant="light" style={{ textTransform: 'none' }}>
+      <Badge
+        size="sm"
+        color={badgeColor}
+        variant="light"
+        style={{ textTransform: 'none', whiteSpace: 'nowrap', maxWidth: 'none' }}
+      >
         {strVal}
       </Badge>
     );
@@ -245,9 +266,9 @@ const CellDisplay = React.memo(function CellDisplay({ col, cellValue }) {
 
   if (colType === 'date' && cellValue) {
     return (
-      <Group gap={4} wrap="nowrap">
-        <IconCalendar size={12} color="#0d9488" />
-        <Text size="xs" fw={500} c="dark.4">
+      <Group gap={4} wrap="nowrap" justify="center">
+        <IconCalendar size={13} color="#0d9488" />
+        <Text size="sm" fw={500} c="dark.5" style={{ whiteSpace: 'nowrap' }}>
           {cellValue}
         </Text>
       </Group>
@@ -259,8 +280,19 @@ const CellDisplay = React.memo(function CellDisplay({ col, cellValue }) {
       return <span className="placeholder-cell">—</span>;
     }
     return (
-      <Badge size="xs" variant="light" color="cyan" fw={700}>
+      <Badge size="sm" variant="light" color="cyan" fw={700} style={{ textTransform: 'none', whiteSpace: 'nowrap' }}>
         {cellValue} yrs
+      </Badge>
+    );
+  }
+
+  if (colKey.toLowerCase().includes('percentage') || colLabel.toLowerCase().includes('percentage') || colLabel.includes('%')) {
+    if (!strVal || strVal.toUpperCase() === 'NAN') {
+      return <span className="placeholder-cell">—</span>;
+    }
+    return (
+      <Badge size="sm" variant="light" color="teal" fw={700} style={{ textTransform: 'none', whiteSpace: 'nowrap' }}>
+        {strVal.replace('%', '')}%
       </Badge>
     );
   }
@@ -270,7 +302,7 @@ const CellDisplay = React.memo(function CellDisplay({ col, cellValue }) {
       return <span className="placeholder-cell">—</span>;
     }
     return (
-      <Badge size="xs" variant="outline" color="blue" fw={700}>
+      <Badge size="sm" variant="outline" color="blue" fw={700} style={{ textTransform: 'none', whiteSpace: 'nowrap' }}>
         {cellValue}
       </Badge>
     );
@@ -278,14 +310,14 @@ const CellDisplay = React.memo(function CellDisplay({ col, cellValue }) {
 
   if (colKey === 'name') {
     return (
-      <Text size="xs" fw={700} c="dark.5">
+      <Text size="sm" fw={750} c="dark.6" style={{ whiteSpace: 'nowrap' }}>
         {cellValue || <span className="placeholder-cell">New Student</span>}
       </Text>
     );
   }
 
   return (
-    <Text size="xs" truncate c={cellValue ? 'dark.4' : 'dimmed'}>
+    <Text size="sm" fw={500} c={cellValue ? 'dark.5' : 'dimmed'} style={{ whiteSpace: 'nowrap' }}>
       {cellValue || <span className="placeholder-cell">Click to edit</span>}
     </Text>
   );
@@ -746,7 +778,6 @@ export default function DynamicBatchTable({
     [columns]
   );
 
-  // Filtered rows by search term across all columns in the batch table
   const filteredRows = useMemo(() => {
     const q = search.toLowerCase().trim();
     if (!q) return rows;
@@ -754,6 +785,14 @@ export default function DynamicBatchTable({
       columns.some((col) => String(row[col.key] || '').toLowerCase().includes(q))
     );
   }, [rows, columns, search]);
+
+  const dynamicTableWidth = useMemo(() => {
+    const colsW = columns.reduce(
+      (acc, col) => acc + (col.width || (col.key === 'name' ? 220 : 170)),
+      0
+    );
+    return Math.max(1200, 50 + 50 + 60 + colsW);
+  }, [columns]);
 
   // Helper to persist batch changes (columns, rows, or metadata) with instantaneous local state reflection
   const saveBatchData = React.useCallback(
@@ -1902,6 +1941,41 @@ export default function DynamicBatchTable({
                     <span className="btn-label-mobile">Import Excel</span>
                   </Button>
 
+                  <Menu shadow="md" width={230} position="bottom-end">
+                    <Menu.Target>
+                      <Button
+                        size="xs"
+                        variant="default"
+                        leftSection={<IconDownload size={14} />}
+                        className="sheet-grid-btn"
+                      >
+                        <span className="btn-label-desktop">Sample Excel</span>
+                        <span className="btn-label-mobile">Sample</span>
+                      </Button>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      <Menu.Label>Import Helper Templates</Menu.Label>
+                      <Menu.Item
+                        leftSection={<IconFileSpreadsheet size={14} color="#0d9488" />}
+                        onClick={downloadSampleRosterExcel}
+                      >
+                        Sample Roster (.xlsx)
+                      </Menu.Item>
+                      <Menu.Item
+                        leftSection={<IconFileSpreadsheet size={14} color="#4f46e5" />}
+                        onClick={downloadOfficialEnrollmentReportExcel}
+                      >
+                        Official Report (.xlsx)
+                      </Menu.Item>
+                      <Menu.Item
+                        leftSection={<IconDownload size={14} color="#0284c7" />}
+                        onClick={downloadSampleCsv}
+                      >
+                        Sample CSV (.csv)
+                      </Menu.Item>
+                    </Menu.Dropdown>
+                  </Menu>
+
                   <Menu shadow="md" width={180} position="bottom-end">
                     <Menu.Target>
                       <Button
@@ -2208,24 +2282,32 @@ export default function DynamicBatchTable({
             withColumnBorders
             striped
             highlightOnHover
-            miw={1000}
+            miw={dynamicTableWidth}
             className="mantine-batch-table"
           >
             {/* Table Header with Dynamic Columns */}
             <Table.Thead>
               <Table.Tr className="lms-th-row">
                 {/* Index Column */}
-                <Table.Th w={50} ta="center">
+                <Table.Th w={50} style={{ width: 50, minWidth: 50 }} ta="center">
                   #
                 </Table.Th>
 
                 {/* Dynamically created columns */}
                 {columns.map((col, colIndex) => {
                   const isLmsHidden = !!(col.hiddenOnLms || col.hidden);
+                  const isName = col.key === 'name' || col.label?.toLowerCase() === 'student name';
+                  const colWidth = col.width || (isName ? 220 : 170);
                   return (
                     <Table.Th
                       key={col.key}
-                      w={col.width || 170}
+                      w={colWidth}
+                      style={{
+                        width: colWidth,
+                        minWidth: colWidth,
+                        whiteSpace: 'nowrap',
+                      }}
+                      ta={isName ? 'left' : 'center'}
                       draggable
                       onDragStart={(e) => handleColDragStart(e, colIndex)}
                       onDragOver={handleColDragOver}
@@ -2233,18 +2315,24 @@ export default function DynamicBatchTable({
                       onDragLeave={handleColDragLeave}
                       onDrop={(e) => handleColDrop(e, colIndex)}
                       onDragEnd={handleColDragEnd}
-                      className="th-draggable"
+                      className={`th-draggable ${isName ? 'th-name' : ''}`}
                       title="Drag to reorder column"
                     >
-                      <div className="th-content-wrapper">
-                        <Group gap={6} wrap="nowrap" align="center" style={{ flex: 1, minWidth: 0 }}>
+                      <div className={`th-content-wrapper ${isName ? 'align-start' : 'align-center'}`}>
+                        <Group
+                          gap={6}
+                          wrap="nowrap"
+                          align="center"
+                          justify={isName ? 'flex-start' : 'center'}
+                          style={{ flex: 1, minWidth: 0 }}
+                        >
                           <span className="col-grip-icon" title="Drag to reorder column">
                             <IconGripVertical size={13} />
                           </span>
                           <span style={{ color: '#93c5fd', display: 'flex' }}>
                             {getColIcon(col.type)}
                           </span>
-                          <Text size="xs" fw={700} c="white" truncate title={col.label}>
+                          <Text size="xs" fw={750} c="white" style={{ whiteSpace: 'nowrap' }} title={col.label}>
                             {col.label}
                           </Text>
                           {isLmsHidden && (
@@ -2254,11 +2342,12 @@ export default function DynamicBatchTable({
                               color="orange"
                               title="This column is hidden on LMS Portal for learners"
                               style={{
-                                fontSize: '9px',
-                                height: '16px',
-                                padding: '0 4px',
+                                fontSize: '10px',
+                                height: '18px',
+                                padding: '0 6px',
                                 textTransform: 'none',
                                 flexShrink: 0,
+                                whiteSpace: 'nowrap',
                               }}
                             >
                               LMS Hidden
@@ -2414,7 +2503,7 @@ export default function DynamicBatchTable({
                     className="mantine-batch-row"
                   >
                     {/* Index & Drag Handle only */}
-                    <Table.Td ta="center">
+                    <Table.Td ta="center" style={{ width: 50, minWidth: 50 }}>
                       <div className="row-index-wrap">
                         <span
                           className="row-grip-handle"
@@ -2431,11 +2520,20 @@ export default function DynamicBatchTable({
                       const isEditing =
                         editingCell?.rowId === row.id && editingCell?.colKey === col.key;
                       const cellValue = row[col.key];
+                      const isName = col.key === 'name' || col.label?.toLowerCase() === 'student name';
+                      const colWidth = col.width || (isName ? 220 : 170);
 
                       return (
                         <Table.Td
                           key={col.key}
-                          className={`excel-td ${isEditing ? 'is-editing' : ''}`}
+                          ta={isName ? 'left' : 'center'}
+                          style={{
+                            width: colWidth,
+                            minWidth: colWidth,
+                            whiteSpace: 'nowrap',
+                            textAlign: isName ? 'left' : 'center',
+                          }}
+                          className={`excel-td ${isName ? 'td-name' : ''} ${isEditing ? 'is-editing' : ''}`}
                           onClick={() => {
                             if (!isEditing) startEditing(row.id, col.key, cellValue);
                           }}
@@ -2454,7 +2552,7 @@ export default function DynamicBatchTable({
                               />
                             </div>
                           ) : (
-                            <div className="cell-display-value">
+                            <div className={`cell-display-value ${isName ? 'justify-start' : 'justify-center'}`}>
                               <CellDisplay col={col} cellValue={cellValue} />
                             </div>
                           )}

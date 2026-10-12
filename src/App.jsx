@@ -72,6 +72,7 @@ function AppContent() {
     loading,
     saveRecord,
     deleteRecord,
+    deleteMultipleRecords,
     deleteBatchWithOptions,
     clearBatchTable,
     importAttendance,
@@ -344,6 +345,7 @@ function AppContent() {
                       onAdd={() => openCreate('student')}
                       onEdit={(record) => openEdit('student', record)}
                       onDelete={(record) => askDelete('student', record)}
+                      onDeleteMultiple={(ids) => deleteMultipleRecords('students', ids)}
                       attendanceThreshold={attendanceThreshold}
                       onNavigate={handlePageNavigate}
                     />

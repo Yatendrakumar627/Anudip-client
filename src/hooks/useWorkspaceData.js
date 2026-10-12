@@ -287,6 +287,16 @@ export function useWorkspaceData() {
     showSuccess('Record deleted.');
   };
 
+  const deleteMultipleRecords = async (resource, recordIds) => {
+    if (!recordIds || !recordIds.length) return;
+    await Promise.allSettled(recordIds.map((id) => api.remove(resource, id)));
+    await reload();
+    showSuccess(
+      `${recordIds.length} ${resource === 'students' ? 'learner' : 'record'}(s) deleted successfully.`,
+      'Bulk Deletion'
+    );
+  };
+
   const importAttendance = async (record) => {
     await api.upsertAttendance(record);
     await reload();
@@ -312,6 +322,7 @@ export function useWorkspaceData() {
     reload,
     saveRecord,
     deleteRecord,
+    deleteMultipleRecords,
     deleteBatchWithOptions,
     clearBatchTable,
     importAttendance,

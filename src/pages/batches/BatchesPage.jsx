@@ -2,10 +2,12 @@ import React, { useMemo, useState } from 'react';
 import {
   Button,
   Group,
+  Menu,
   SegmentedControl,
   Text,
 } from '@mantine/core';
 import {
+  IconDownload,
   IconFileSpreadsheet,
   IconLayoutGrid,
   IconPlus,
@@ -14,6 +16,10 @@ import {
 import PageHeader from '../../components/common/PageHeader';
 import DynamicBatchTable from '../../components/batches/DynamicBatchTable';
 import ImportEnrollmentModal from '../../components/batches/ImportEnrollmentModal';
+import {
+  downloadSampleExcelTemplate,
+  downloadSampleCsv,
+} from '../../utils/sampleExcelGenerator';
 import { showError, showSuccess } from '../../utils/notifications';
 import BatchStats from './components/BatchStats';
 import BatchCardsGrid from './components/BatchCardsGrid';
@@ -170,6 +176,33 @@ export default function BatchesPage({
         eyebrow="COHORT MANAGEMENT"
         action={
           <Group gap="xs" className="batch-header-actions-group">
+            <Menu shadow="md" width={260} position="bottom-end">
+              <Menu.Target>
+                <Button
+                  leftSection={<IconDownload size={16} />}
+                  variant="default"
+                  className="batch-header-action-btn"
+                >
+                  Sample Excel
+                </Button>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Label>Official 16-Column Templates</Menu.Label>
+                <Menu.Item
+                  leftSection={<IconFileSpreadsheet size={15} color="#0d9488" />}
+                  onClick={downloadSampleExcelTemplate}
+                >
+                  Official Report Template (.xlsx)
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<IconDownload size={15} color="#0284c7" />}
+                  onClick={downloadSampleCsv}
+                >
+                  Sample Roster CSV (.csv)
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+
             <Button
               leftSection={<IconFileSpreadsheet size={17} />}
               variant="light"

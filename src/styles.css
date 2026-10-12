@@ -461,6 +461,190 @@ a{color:inherit}
 .clickable-student-row{cursor:pointer;transition:background-color .15s ease}
 .clickable-student-row:hover>td{background-color:#f1f5f9!important}
 
+/* ==========================================================================
+   LMS Credential Data Table Typography & Word Visibility Enhancements
+   ========================================================================== */
+.lms-credential-data-table {
+  font-size: 13px !important;
+  width: 100% !important;
+}
+
+/* Header Cells: bold, legible, no awkward wrapping or truncation */
+.lms-credential-data-table .lms-th-row th,
+.lms-credential-data-table thead th,
+.lms-th-cell {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  padding: 12px 14px !important;
+  white-space: nowrap !important;
+  border-bottom: 2px solid #334155 !important;
+}
+
+.lms-th-cell span {
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Body Cells: comfortable font size, no clipping */
+.lms-credential-data-table tbody td {
+  font-size: 13px !important;
+  padding: 11px 14px !important;
+  color: #1e293b !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  line-height: 1.4 !important;
+}
+
+/* Center-align all headers and cells except student name */
+.lms-credential-data-table th:not(.lms-th-name),
+.lms-credential-data-table td:not(.lms-td-name),
+.mantine-batch-table th:not(.th-name),
+.mantine-batch-table td:not(.td-name) {
+  text-align: center !important;
+}
+
+.lms-credential-data-table th.lms-th-name,
+.lms-credential-data-table td.lms-td-name,
+.mantine-batch-table th.th-name,
+.mantine-batch-table td.td-name {
+  text-align: left !important;
+}
+
+/* Batch Table Cell Display Alignment */
+.mantine-batch-table .excel-td:not(.td-name) .cell-display-value {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.mantine-batch-table .excel-td.td-name .cell-display-value {
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.mantine-batch-table .th-draggable:not(.th-name) .th-content-wrapper {
+  justify-content: center !important;
+}
+
+.mantine-batch-table .th-draggable.th-name .th-content-wrapper {
+  justify-content: flex-start !important;
+}
+
+.mantine-batch-table tbody td {
+  font-size: 13px !important;
+  padding: 11px 14px !important;
+  color: #1e293b !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  line-height: 1.4 !important;
+}
+
+.mantine-batch-table thead th,
+.mantine-batch-table .lms-th-row th {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  padding: 12px 14px !important;
+  white-space: nowrap !important;
+  border-bottom: 2px solid #334155 !important;
+}
+
+.mantine-batch-table .mantine-Badge-root {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  height: auto !important;
+  min-height: 25px !important;
+  padding: 3px 10px !important;
+  border-radius: 7px !important;
+  max-width: none !important;
+  width: fit-content !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  margin: 0 auto !important;
+}
+
+.mantine-batch-table .mantine-Badge-label {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  letter-spacing: 0.1px !important;
+}
+
+/* Student name text */
+.lms-credential-data-table .student-name-text {
+  font-size: 13.5px !important;
+  font-weight: 750 !important;
+  color: #0f172a !important;
+}
+
+/* Badges: Increased font size, NO ELLIPSIS, show complete words */
+.lms-credential-data-table .mantine-Badge-root {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  height: auto !important;
+  min-height: 25px !important;
+  padding: 3px 10px !important;
+  border-radius: 7px !important;
+  max-width: none !important;
+  width: fit-content !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  margin: 0 auto !important;
+}
+
+.lms-credential-data-table .mantine-Badge-label {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  letter-spacing: 0.1px !important;
+}
+
+/* LMS Code Credentials (User & Pass): clear monospace font */
+.lms-code-badge {
+  display: inline-block;
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.4px !important;
+}
+
+.lms-code-badge.user {
+  background: #eef2ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+}
+
+.lms-code-badge.pass {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+/* Action button for launching LMS */
+.lms-portal-launch-btn {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  height: 32px !important;
+}
+
+
 @media print{
   @page{size:A4 portrait;margin:10mm}
   body,.app-root,.main-area{background:#fff!important;color:#000!important;margin:0!important;padding:0!important}
@@ -1515,3 +1699,295 @@ button[class*="day"][data-selected],
   color: #3730a3;
   font-weight: 700;
 }
+
+/* ==========================================================================
+   Students Directory Enhanced UI: Bulk Actions, Multi-select, Pagination
+   ========================================================================== */
+.students-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.students-stat-box {
+  background: #ffffff;
+  border: 1px solid #e7ebf3;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  min-width: 0;
+}
+
+.students-stat-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+  border-color: #c7d2fe;
+}
+
+.students-stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.students-bulk-banner {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: 0 10px 25px rgba(30, 27, 75, 0.25);
+  animation: slideDownFade 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.students-row-selected {
+  background-color: #eef2ff !important;
+}
+
+.students-row-selected:hover td {
+  background-color: #e0e7ff !important;
+}
+
+/* Mobile Learner Cards View */
+.students-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.student-mobile-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 13px 14px;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.student-mobile-card.is-selected {
+  background: #f5f7ff !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 1px #6366f1, 0 4px 12px rgba(99, 102, 241, 0.12) !important;
+}
+
+.student-mobile-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.student-mobile-card-middle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.student-mobile-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.students-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 18px;
+  background: #ffffff;
+  border-top: 1px solid #eef1f6;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  flex-wrap: wrap;
+}
+
+.students-quick-card {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.students-quick-card:hover {
+  color: #4338ca;
+  text-decoration: underline;
+}
+
+.students-cred-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+/* ==========================================================================
+   Mobile Justification Media Queries (< 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Justified 2-column KPI Cards Grid on Mobile */
+  .students-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .students-stat-box {
+    padding: 10px 10px !important;
+    border-radius: 11px !important;
+    gap: 10px !important;
+    min-height: 58px !important;
+  }
+
+  .students-stat-icon {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+  }
+
+  .students-stat-icon svg {
+    width: 17px !important;
+    height: 17px !important;
+  }
+
+  .students-stat-box .mantine-Text-root:first-child {
+    font-size: 8.5px !important;
+    letter-spacing: 0.3px !important;
+    line-height: 1.2 !important;
+  }
+
+  .students-stat-box .mantine-Text-root:nth-child(2),
+  .students-stat-box strong {
+    font-size: 18px !important;
+    line-height: 1.15 !important;
+  }
+
+  /* 5th stat card (Avg Attendance) spans across both columns */
+  .students-stat-box:nth-child(5) {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* Justified Toolbar & Filter Grid */
+  .students-toolbar-wrap {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin-bottom: 12px !important;
+  }
+
+  .students-search-row {
+    width: 100% !important;
+  }
+
+  .students-search-row .search-box {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .students-filters-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .students-filters-grid .mantine-Select-root {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .students-toolbar-footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  /* Bulk Actions Banner Mobile Justification */
+  .students-bulk-banner {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .students-bulk-top-group {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  .students-bulk-actions-group {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .students-bulk-actions-group .mantine-Button-root {
+    width: 100% !important;
+    height: 35px !important;
+    font-size: 11px !important;
+    justify-content: center !important;
+  }
+
+  /* Pagination Bar on Mobile */
+  .students-pagination-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 12px 14px !important;
+  }
+
+  .students-pagination-top-info {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  .students-pagination-controls {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+  }
+}
+
+
