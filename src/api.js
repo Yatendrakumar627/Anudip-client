@@ -1,0 +1,287 @@
+import { seedData } from './data';
+
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const STORAGE_KEY = 'anudip-training-hub-v3';
+const isDemo = !API_BASE;
+
+function localDb() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (!parsed.batches) {
+        parsed.batches = [];
+      }
+      // Normalize batches while strictly PRESERVING user's customized column and row sequence
+      if (parsed.batches && Array.isArray(parsed.batches)) {
+        parsed.batches = parsed.batches.map((b) => {
+          const baseCols = [
+            { key: 'name', label: 'Student Name', type: 'text', width: 200, required: true },
+            { key: 'email', label: 'Email', type: 'email', width: 220 },
+            { key: 'lmsUsername', label: 'User Name', type: 'text', width: 150 },
+            { key: 'lmsPassword', label: 'Password', type: 'text', width: 140 },
+          ];
+          if (!b.columns || !b.columns.length) {
+            return { ...b, columns: baseCols };
+          }
+          const baseColMap = {
+            name: { key: 'name', label: 'Student Name', type: 'text', width: 200, required: true },
+            email: { key: 'email', label: 'Email', type: 'email', width: 220 },
+            lmsusername: { key: 'lmsUsername', label: 'User Name', type: 'text', width: 150 },
+            lmspassword: { key: 'lmsPassword', label: 'Password', type: 'text', width: 140 },
+          };
+          const baseColByLabel = {
+            'student name': baseColMap.name,
+            'email': baseColMap.email,
+            'user name': baseColMap.lmsusername,
+            'lms user id': baseColMap.lmsusername,
+            'password': baseColMap.lmspassword,
+          };
+          const orderedColumns = [];
+          const seenKeys = new Set();
+          const seenBaseKeys = new Set();
+
+          // Preserve exact sequence saved in b.columns
+          (b.columns || []).forEach((c) => {
+            const k = (c.key || '').toLowerCase().trim();
+            const l = (c.label || '').toLowerCase().trim();
+            const matchedBase = baseColMap[k] || baseColByLabel[l];
+            if (matchedBase) {
+              if (!seenBaseKeys.has(matchedBase.key)) {
+                seenBaseKeys.add(matchedBase.key);
+                seenKeys.add(matchedBase.key);
+                orderedColumns.push({ ...matchedBase, ...c, width: c.width || matchedBase.width });
+              }
+            } else {
+              const canonical = c.key || `col_${l.replace(/[^a-z0-9]/g, '_')}`;
+              if (!seenKeys.has(canonical)) {
+                seenKeys.add(canonical);
+                orderedColumns.push(c);
+              }
+            }
+          });
+
+          // Ensure any missing core default columns are appended
+          baseCols.forEach((bc) => {
+            if (!seenBaseKeys.has(bc.key)) {
+              orderedColumns.push(bc);
+              seenBaseKeys.add(bc.key);
+            }
+          });
+
+          const rows = (b.rows || []).map((r) => ({
+            ...r,
+            name: r.name || 'New Student',
+            email: r.email || '',
+            lmsUsername: r.lmsUsername || r['LMS User ID'] || '',
+            lmsPassword: r.lmsPassword || '',
+          }));
+          return { ...b, columns: orderedColumns, rows };
+        });
+      }
+      return parsed;
+    }
+  } catch (error) {
+    console.warn('Could not read demo data:', error);
+  }
+  const fresh = structuredClone(seedData);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+  return fresh;
+}
+function saveDb(db) { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+function id() { return `local_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
+
+async function request(path, options = {}) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.message || `Request failed (${response.status})`);
+  return body;
+}
+
+export const api = {
+  demoMode: isDemo,
+  async list(resource) {
+    if (!isDemo) return request(`/api/${resource}`);
+    const db = localDb();
+    return structuredClone(db[resource] || []);
+  },
+  async getWorkspace() {
+    if (!isDemo) return request('/api/workspace');
+    const db = localDb();
+    return {
+      students: structuredClone(db.students || []),
+      sessions: structuredClone(db.sessions || []),
+      attendance: structuredClone(db.attendance || []),
+      placements: structuredClone(db.placements || []),
+      batches: structuredClone(db.batches || []),
+    };
+  },
+  async create(resource, record) {
+    if (!isDemo) return request(`/api/${resource}`, { method: 'POST', body: JSON.stringify(record) });
+    const db = localDb();
+    if (resource === 'students' && db.students.some((row) => String(row.email || '').toLowerCase() === String(record.email || '').toLowerCase())) throw new Error('A student with this email already exists.');
+    if (resource === 'attendance' && db.attendance.some((row) => row.studentId === record.studentId && row.sessionId === record.sessionId)) throw new Error('An attendance record already exists for this student and session. Edit the existing record instead.');
+    const saved = { ...record, id: record.id || id() };
+    db[resource] = [saved, ...(db[resource] || [])];
+
+    // Synchronize batch rows with student directory
+    if (resource === 'batches' && record.rows && Array.isArray(record.rows)) {
+      record.rows.forEach((row, i) => {
+        if (!row.name) return;
+        const sIndex = db.students.findIndex(
+          (s) =>
+            s.id === row.id ||
+            (row.lmsUsername && s.lmsUsername && String(s.lmsUsername).toLowerCase() === String(row.lmsUsername).toLowerCase()) ||
+            (row.email && s.email && String(s.email).toLowerCase() === String(row.email).toLowerCase())
+        );
+        const studentPayload = {
+          ...row,
+          id: row.id || `stu_b_${Date.now().toString(36)}_${i}`,
+          name: row.name,
+          lmsUsername: row.lmsUsername || '',
+          lmsPassword: row.lmsPassword || '',
+          email: row.email || '',
+          phone: row.phone || '',
+          batch: record.name,
+          field: record.field || '',
+          status: row.status || 'Active',
+        };
+        if (sIndex >= 0) {
+          db.students[sIndex] = { ...db.students[sIndex], ...studentPayload };
+        } else {
+          db.students.push(studentPayload);
+        }
+      });
+    }
+    // Synchronize student with batch table
+    if (resource === 'students' && record.batch) {
+      db.batches = (db.batches || []).map((b) => {
+        if (b.name === record.batch || b.code === record.batch) {
+          const rows = Array.isArray(b.rows) ? [...b.rows] : [];
+          const rIdx = rows.findIndex((r) => r.id === saved.id || (r.email && r.email.toLowerCase() === (record.email || '').toLowerCase()));
+          const rowData = {
+            id: saved.id,
+            name: saved.name,
+            email: saved.email || '',
+            lmsUsername: saved.lmsUsername || '',
+            lmsPassword: saved.lmsPassword || '',
+            phone: saved.phone || '',
+            status: saved.status || 'Active',
+          };
+          if (rIdx >= 0) rows[rIdx] = { ...rows[rIdx], ...rowData };
+          else rows.push(rowData);
+          return { ...b, rows };
+        }
+        return b;
+      });
+    }
+
+    saveDb(db); return structuredClone(saved);
+  },
+  async update(resource, recordId, record) {
+    if (!isDemo) return request(`/api/${resource}/${recordId}`, { method: 'PUT', body: JSON.stringify(record) });
+    const db = localDb();
+    const index = (db[resource] || []).findIndex((row) => row.id === recordId);
+    if (index < 0) throw new Error('Record not found. Refresh and try again.');
+    if (resource === 'students' && db.students.some((row, i) => i !== index && String(row.email || '').toLowerCase() === String(record.email || '').toLowerCase())) throw new Error('A student with this email already exists.');
+    if (resource === 'attendance' && db.attendance.some((row, i) => i !== index && row.studentId === (record.studentId ?? db.attendance[index].studentId) && row.sessionId === (record.sessionId ?? db.attendance[index].sessionId))) throw new Error('An attendance record already exists for this student and session.');
+    db[resource][index] = { ...db[resource][index], ...record, id: recordId };
+
+    // Synchronize batch rows with student directory
+    if (resource === 'batches' && record.rows && Array.isArray(record.rows)) {
+      record.rows.forEach((row, i) => {
+        if (!row.name) return;
+        const sIndex = db.students.findIndex(
+          (s) =>
+            s.id === row.id ||
+            (row.lmsUsername && s.lmsUsername && String(s.lmsUsername).toLowerCase() === String(row.lmsUsername).toLowerCase()) ||
+            (row.email && s.email && String(s.email).toLowerCase() === String(row.email).toLowerCase())
+        );
+        const studentPayload = {
+          ...row,
+          id: row.id || `stu_b_${Date.now().toString(36)}_${i}`,
+          name: row.name,
+          lmsUsername: row.lmsUsername || '',
+          lmsPassword: row.lmsPassword || '',
+          email: row.email || '',
+          phone: row.phone || '',
+          batch: record.name,
+          field: record.field || '',
+          status: row.status || 'Active',
+        };
+        if (sIndex >= 0) {
+          db.students[sIndex] = { ...db.students[sIndex], ...studentPayload };
+        } else {
+          db.students.push(studentPayload);
+        }
+      });
+    }
+
+    // Synchronize student with batch table
+    if (resource === 'students') {
+      const updatedStudent = db.students[index];
+      db.batches = (db.batches || []).map((b) => {
+        const rows = Array.isArray(b.rows) ? [...b.rows] : [];
+        const isTargetBatch = b.name === updatedStudent.batch || b.code === updatedStudent.batch;
+        const rIdx = rows.findIndex((r) => r.id === recordId || (r.email && updatedStudent.email && r.email.toLowerCase() === updatedStudent.email.toLowerCase()));
+
+        if (isTargetBatch) {
+          const rowData = {
+            id: recordId,
+            name: updatedStudent.name,
+            email: updatedStudent.email || '',
+            lmsUsername: updatedStudent.lmsUsername || '',
+            lmsPassword: updatedStudent.lmsPassword || '',
+            phone: updatedStudent.phone || '',
+            status: updatedStudent.status || 'Active',
+          };
+          if (rIdx >= 0) rows[rIdx] = { ...rows[rIdx], ...rowData };
+          else rows.push(rowData);
+          return { ...b, rows };
+        } else if (rIdx >= 0) {
+          // Student moved out of this batch
+          return { ...b, rows: rows.filter((_, i) => i !== rIdx) };
+        }
+        return b;
+      });
+    }
+
+    saveDb(db); return structuredClone(db[resource][index]);
+  },
+  async remove(resource, recordId) {
+    if (!isDemo) return request(`/api/${resource}/${recordId}`, { method: 'DELETE' });
+    const db = localDb();
+    const toRemove = (db[resource] || []).find((row) => row.id === recordId);
+    db[resource] = (db[resource] || []).filter((row) => row.id !== recordId);
+    if (resource === 'students') {
+      db.placements = db.placements.filter((row) => row.studentId !== recordId);
+      // Remove from any batch rows
+      db.batches = (db.batches || []).map((b) => ({
+        ...b,
+        rows: (b.rows || []).filter((r) => r.id !== recordId && (!toRemove?.email || r.email !== toRemove.email)),
+      }));
+    }
+    if (resource === 'students' || resource === 'sessions') db.attendance = db.attendance.filter((row) => row.studentId !== recordId && row.sessionId !== recordId);
+    saveDb(db); return { success: true };
+  },
+  async upsertAttendance(record) {
+    if (!isDemo) return request('/api/attendance/upsert', { method: 'POST', body: JSON.stringify(record) });
+    const db = localDb();
+    const index = db.attendance.findIndex((row) => row.studentId === record.studentId && row.sessionId === record.sessionId);
+    if (index >= 0) db.attendance[index] = { ...db.attendance[index], ...record, id: db.attendance[index].id };
+    else db.attendance.unshift({ ...record, id: record.id || id() });
+    saveDb(db);
+    return structuredClone(db.attendance.find((row) => row.studentId === record.studentId && row.sessionId === record.sessionId));
+  },
+  async syncMeet(sessionId) {
+    if (isDemo) throw new Error('Meet sync requires the Node API plus Google OAuth credentials and a valid Meet link. Configure the server first.');
+    return request(`/api/sessions/${sessionId}/sync-meet`, { method: 'POST', body: '{}' });
+  },
+  async googleStatus() {
+    if (isDemo) return { configured: false, demo: true };
+    return request('/api/integrations/google/status');
+  },
+};

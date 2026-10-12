@@ -1,0 +1,8 @@
+export { default as OverviewPage } from './overview';
+export { default as LmsPortalPage } from './lms-portal';
+export { default as BatchesPage } from './batches';
+export { default as StudentsPage } from './students';
+export { default as SessionsPage } from './sessions';
+export { default as AttendancePage } from './attendance';
+export { default as PlacementsPage } from './placements';
+export { default as SettingsPage } from './settings';
