@@ -65,20 +65,20 @@ export default function QuizPage({ batches = [] }) {
   const [editingRoom, setEditingRoom] = useState(null);
   const [modalSaving, setModalSaving] = useState(false);
 
-  // Load all rooms from API
+  // Load all rooms from API (stable callback, zero redundant re-fetches)
   const fetchRooms = useCallback(async () => {
     try {
       const data = await api.listQuizRooms();
       setRooms(Array.isArray(data) ? data : []);
-      if (data && data.length && !selectedRoomId) {
-        setSelectedRoomId(data[0].id);
+      if (data && data.length) {
+        setSelectedRoomId((prev) => prev || data[0].id);
       }
     } catch (err) {
       console.error('Failed to load quiz rooms:', err);
     } finally {
       setLoading(false);
     }
-  }, [selectedRoomId]);
+  }, []);
 
   useEffect(() => {
     fetchRooms();
@@ -482,6 +482,15 @@ export default function QuizPage({ batches = [] }) {
                   </Button>
                 </Paper>
               </Center>
+            ) : loading ? (
+              <Center py={60}>
+                <Stack align="center" gap="xs">
+                  <Loader color="indigo" size="md" />
+                  <Text size="sm" c="dimmed">
+                    Loading Quiz Rooms...
+                  </Text>
+                </Stack>
+              </Center>
             ) : (
               <AdminQuizRooms
                 rooms={rooms}
@@ -524,6 +533,15 @@ export default function QuizPage({ batches = [] }) {
                     Enter Admin Password
                   </Button>
                 </Paper>
+              </Center>
+            ) : loading ? (
+              <Center py={60}>
+                <Stack align="center" gap="xs">
+                  <Loader color="indigo" size="md" />
+                  <Text size="sm" c="dimmed">
+                    Loading Assessment Results...
+                  </Text>
+                </Stack>
               </Center>
             ) : (
               <AdminQuizResults

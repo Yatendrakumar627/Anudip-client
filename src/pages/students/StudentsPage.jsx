@@ -43,7 +43,6 @@ import {
   IconX,
   IconAlertTriangle,
 } from '@tabler/icons-react';
-import * as XLSX from 'xlsx';
 import PageHeader from '../../components/common/PageHeader';
 import SearchBox from '../../components/common/SearchBox';
 import TableActions from '../../components/common/TableActions';
@@ -280,7 +279,7 @@ export default function StudentsPage({
   };
 
   // Export learners to Excel
-  const handleExportExcel = (exportOnlySelected = false) => {
+  const handleExportExcel = async (exportOnlySelected = false) => {
     const listToExport = exportOnlySelected
       ? students.filter((s) => selectedIds.includes(s.id))
       : filtered;
@@ -289,6 +288,8 @@ export default function StudentsPage({
       showError(new Error('No learners available to export.'));
       return;
     }
+
+    const XLSX = await import('xlsx');
 
     const data = listToExport.map((s, idx) => {
       const stats = attendanceStatsMap.get(s.id) || { recordsCount: 0, attendedCount: 0, rate: 0, totalSec: 0 };

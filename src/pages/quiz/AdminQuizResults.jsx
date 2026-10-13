@@ -30,9 +30,8 @@ import {
   IconAward,
   IconShare,
 } from '@tabler/icons-react';
-import * as XLSX from 'xlsx';
 import StudentAnswersModal from './StudentAnswersModal';
-import { showSuccess, showWarning } from '../../utils/notifications';
+import { showSuccess, showWarning, showError } from '../../utils/notifications';
 
 export default function AdminQuizResults({
   rooms = [],
@@ -82,29 +81,35 @@ export default function AdminQuizResults({
     return { total, avgScore, avgPct, highestScore, passCount, passRate };
   }, [submissions, questionsCount]);
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (!submissions.length) {
       showWarning('No submissions to export.');
       return;
     }
 
-    const rows = submissions.map((s, idx) => ({
-      Rank: idx + 1,
-      'Student Name': s.studentName,
-      'Email / ID': s.studentEmail || 'N/A',
-      Score: `${s.score} / ${s.totalQuestions || questionsCount}`,
-      'Percentage (%)': s.percentage,
-      Status: s.score >= Math.ceil(questionsCount / 2) ? 'Passed' : 'Needs Practice',
-      'Time Taken (seconds)': s.timeTakenSeconds || 0,
-      'Submitted At': s.submittedAt ? new Date(s.submittedAt).toLocaleString('en-IN') : 'N/A',
-    }));
+    try {
+      const XLSX = await import('xlsx');
+      const rows = submissions.map((s, idx) => ({
+        Rank: idx + 1,
+        'Student Name': s.studentName,
+        'Email / ID': s.studentEmail || 'N/A',
+        Score: `${s.score} / ${s.totalQuestions || questionsCount}`,
+        'Percentage (%)': s.percentage,
+        Status: s.score >= Math.ceil(questionsCount / 2) ? 'Passed' : 'Needs Practice',
+        'Time Taken (seconds)': s.timeTakenSeconds || 0,
+        'Submitted At': s.submittedAt ? new Date(s.submittedAt).toLocaleString('en-IN') : 'N/A',
+      }));
 
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Results');
-    const filename = `${(activeRoom.title || 'Quiz').replace(/[^a-z0-9]/gi, '_')}_Results.xlsx`;
-    XLSX.writeFile(workbook, filename);
-    showSuccess(`Exported ${submissions.length} results to ${filename}`);
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Results');
+      const filename = `${(activeRoom.title || 'Quiz').replace(/[^a-z0-9]/gi, '_')}_Results.xlsx`;
+      XLSX.writeFile(workbook, filename);
+      showSuccess(`Exported ${submissions.length} results to ${filename}`);
+    } catch (err) {
+      console.error('Failed to export Excel:', err);
+      showError('Failed to generate Excel file. Please try again.');
+    }
   };
 
   const formatTime = (secs) => {

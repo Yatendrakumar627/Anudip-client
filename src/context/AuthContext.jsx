@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { showError, showSuccess, showWarning } from '../utils/notifications';
 
@@ -52,27 +52,34 @@ export function AuthProvider({ children }) {
 
   const sessionExpiredNotified = useRef(false);
 
-  // 15-Minute Auto-Expiration & Live Countdown Interval
+  // 15-Minute Auto-Expiration & Optimized Countdown (15-second tick to prevent whole-app re-render thrashing)
   useEffect(() => {
     if (!isAdmin || !expiresAt) {
       setRemainingSeconds(0);
       return;
     }
 
+    const diff = expiresAt - Date.now();
+    if (diff <= 0) {
+      handleSessionExpired();
+      return;
+    }
+
+    // Exact lock timer when session expires
+    const lockTimer = setTimeout(() => {
+      handleSessionExpired();
+    }, diff);
+
+    // Update countdown display every 15 seconds instead of every second
     const checkInterval = setInterval(() => {
-      const now = Date.now();
-      const diff = expiresAt - now;
-      const secs = Math.max(0, Math.round(diff / 1000));
-      setRemainingSeconds(secs);
+      const remaining = Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
+      setRemainingSeconds(remaining);
+    }, 15_000);
 
-      // Auto-Lock when 15 minutes expire
-      if (diff <= 0) {
-        clearInterval(checkInterval);
-        handleSessionExpired();
-      }
-    }, 1000);
-
-    return () => clearInterval(checkInterval);
+    return () => {
+      clearTimeout(lockTimer);
+      clearInterval(checkInterval);
+    };
   }, [isAdmin, expiresAt]);
 
   // Session Expired Handler
@@ -196,29 +203,46 @@ export function AuthProvider({ children }) {
     return false;
   };
 
+  const openLoginModal = useCallback((redirect = null) => {
+    if (redirect) setPendingRedirect(redirect);
+    setAuthModalOpen(true);
+  }, []);
+
+  const closeLoginModal = useCallback(() => {
+    setAuthModalOpen(false);
+    setPendingRedirect(null);
+  }, []);
+
+  const providerValue = useMemo(() => ({
+    isAdmin,
+    adminToken,
+    expiresAt,
+    remainingSeconds,
+    formattedRemaining,
+    authModalOpen,
+    authLoading,
+    openLoginModal,
+    closeLoginModal,
+    login,
+    logout,
+    requireAdmin,
+  }), [
+    isAdmin,
+    adminToken,
+    expiresAt,
+    remainingSeconds,
+    formattedRemaining,
+    authModalOpen,
+    authLoading,
+    openLoginModal,
+    closeLoginModal,
+    login,
+    logout,
+    requireAdmin,
+  ]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        isAdmin,
-        adminToken,
-        expiresAt,
-        remainingSeconds,
-        formattedRemaining,
-        authModalOpen,
-        authLoading,
-        openLoginModal: (redirect = null) => {
-          if (redirect) setPendingRedirect(redirect);
-          setAuthModalOpen(true);
-        },
-        closeLoginModal: () => {
-          setAuthModalOpen(false);
-          setPendingRedirect(null);
-        },
-        login,
-        logout,
-        requireAdmin,
-      }}
-    >
+    <AuthContext.Provider value={providerValue}>
       {children}
     </AuthContext.Provider>
   );

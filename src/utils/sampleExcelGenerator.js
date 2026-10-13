@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx';
 import { showSuccess } from './notifications';
 
 /**
@@ -141,7 +140,8 @@ const SAMPLE_COLS_WIDTHS = [
  * with the exact 16 columns requested from the Anudip MIS report:
  * Batch Code | Course Alias | Course Name | Start Date | End Date | Student Code | Student Name | DOB | Gender | Disability Parcentage | Disability Type | Address | Email ID | Mobile No. | Education Qualification | Password
  */
-export function downloadSampleExcelTemplate() {
+export async function downloadSampleExcelTemplate() {
+  const XLSX = await import('xlsx');
   const worksheet = XLSX.utils.json_to_sheet(SAMPLE_ENROLLMENT_DATA);
   worksheet['!cols'] = SAMPLE_COLS_WIDTHS;
 

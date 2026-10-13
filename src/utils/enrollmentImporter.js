@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import dayjs from 'dayjs';
 
@@ -19,6 +18,7 @@ export async function parseSpreadsheetFile(file) {
   const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
 
   if (isExcel) {
+    const XLSX = await import('xlsx');
     const arrayBuffer = await file.arrayBuffer();
     const workbook = XLSX.read(arrayBuffer, {
       type: 'array',

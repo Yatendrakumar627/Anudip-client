@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { api } from '../api';
 import { seedData } from '../data';
 import { showError, showSuccess } from '../utils/notifications';
@@ -67,18 +67,37 @@ function unifyStudentsWithBatchRows(studentsList = [], batchesList = []) {
 }
 
 export function useWorkspaceData() {
-  const [students, setStudents] = useState([]);
-  const [sessions, setSessions] = useState([]);
-  const [attendance, setAttendance] = useState([]);
-  const [placements, setPlacements] = useState([]);
-  const [batches, setBatches] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const initialCache = api.getCachedWorkspaceData();
+  const hasValidCache = Boolean(initialCache && (initialCache.batches?.length || initialCache.students?.length));
+
+  const [batches, setBatches] = useState(() => {
+    if (hasValidCache && initialCache?.batches?.length) {
+      return initialCache.batches;
+    }
+    return seedData.batches || [];
+  });
+
+  const [students, setStudents] = useState(() => {
+    if (hasValidCache) {
+      return unifyStudentsWithBatchRows(initialCache.students || [], initialCache.batches || []);
+    }
+    return [];
+  });
+
+  const [sessions, setSessions] = useState(() => (hasValidCache ? initialCache.sessions || [] : []));
+  const [attendance, setAttendance] = useState(() => (hasValidCache ? initialCache.attendance || [] : []));
+  const [placements, setPlacements] = useState(() => (hasValidCache ? initialCache.placements || [] : []));
+  const [loading, setLoading] = useState(() => !hasValidCache);
+
+  const lastReloadRef = useRef(0);
+  const hasLoadedRef = useRef(hasValidCache);
 
   const reload = useCallback(async () => {
     try {
-      let data;
+      lastReloadRef.current = Date.now();
+      let res;
       try {
-        data = await api.getWorkspace();
+        res = await api.getWorkspace();
       } catch {
         const [studentsData, sessionsData, attendanceData, placementsData, batchesData] = await Promise.all([
           api.list('students'),
@@ -87,14 +106,25 @@ export function useWorkspaceData() {
           api.list('placements'),
           api.list('batches'),
         ]);
-        data = {
-          students: studentsData,
-          sessions: sessionsData,
-          attendance: attendanceData,
-          placements: placementsData,
-          batches: batchesData,
+        res = {
+          data: {
+            students: studentsData,
+            sessions: sessionsData,
+            attendance: attendanceData,
+            placements: placementsData,
+            batches: batchesData,
+          },
+          notModified: false,
         };
       }
+
+      // If server returned 304 Not Modified and data is already populated, skip expensive state setting & re-renders!
+      if (res?.notModified && hasLoadedRef.current) {
+        return;
+      }
+
+      const data = res?.data || res || {};
+      hasLoadedRef.current = true;
 
       const effectiveBatches = data.batches && data.batches.length ? data.batches : (seedData.batches || []);
       const unifiedStudents = unifyStudentsWithBatchRows(data.students || [], effectiveBatches);
@@ -138,6 +168,9 @@ export function useWorkspaceData() {
 
     const handleVisibilityChange = () => {
       if (typeof document !== 'undefined' && !document.hidden && !api.demoMode) {
+        const now = Date.now();
+        // Debounce tab switches: only reload if at least 30 seconds elapsed since last fetch
+        if (now - lastReloadRef.current < 30_000) return;
         reload().catch(() => {});
       }
     };

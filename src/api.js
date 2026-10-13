@@ -91,11 +91,44 @@ function localDb() {
 function saveDb(db) { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
 function id() { return `local_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
 
+const WORKSPACE_CACHE_KEY = 'anudip_ws_cache_v3';
+const WORKSPACE_ETAG_KEY = 'anudip_ws_etag_v3';
+
+let workspaceCache = null;
+let workspaceEtag = null;
+
+try {
+  const savedEtag = localStorage.getItem(WORKSPACE_ETAG_KEY);
+  const savedCache = localStorage.getItem(WORKSPACE_CACHE_KEY);
+  if (savedEtag && savedCache) {
+    workspaceEtag = savedEtag;
+    workspaceCache = JSON.parse(savedCache);
+  }
+} catch (e) {
+  console.warn('Could not read persistent workspace cache:', e);
+}
+
+export function getCachedWorkspaceData() {
+  return workspaceCache;
+}
+
+export function invalidateWorkspaceCache() {
+  workspaceCache = null;
+  workspaceEtag = null;
+  try {
+    localStorage.removeItem(WORKSPACE_CACHE_KEY);
+    localStorage.removeItem(WORKSPACE_ETAG_KEY);
+  } catch (e) {}
+}
+
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
   });
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method)) {
+    invalidateWorkspaceCache();
+  }
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.message || `Request failed (${response.status})`);
   return body;
@@ -103,20 +136,56 @@ async function request(path, options = {}) {
 
 export const api = {
   demoMode: isDemo,
+  getCachedWorkspaceData,
   async list(resource) {
     if (!isDemo) return request(`/api/${resource}`);
     const db = localDb();
     return structuredClone(db[resource] || []);
   },
   async getWorkspace() {
-    if (!isDemo) return request('/api/workspace');
+    if (!isDemo) {
+      const headers = {};
+      if (workspaceEtag && workspaceCache) {
+        headers['If-None-Match'] = workspaceEtag;
+      }
+      const response = await fetch(`${API_BASE}/api/workspace`, {
+        headers: { 'Content-Type': 'application/json', ...headers },
+      });
+
+      if (response.status === 304 && workspaceCache) {
+        // Fast 304 Not Modified: return cached data immediately without cloning or re-renders
+        return { data: workspaceCache, notModified: true };
+      }
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.message || `Request failed (${response.status})`);
+      }
+
+      const data = await response.json();
+      workspaceCache = data;
+      const etag = response.headers.get('ETag');
+      if (etag) {
+        workspaceEtag = etag;
+        try {
+          localStorage.setItem(WORKSPACE_ETAG_KEY, etag);
+        } catch (e) {}
+      }
+      try {
+        localStorage.setItem(WORKSPACE_CACHE_KEY, JSON.stringify(data));
+      } catch (e) {}
+      return { data, notModified: false };
+    }
     const db = localDb();
     return {
-      students: structuredClone(db.students || []),
-      sessions: structuredClone(db.sessions || []),
-      attendance: structuredClone(db.attendance || []),
-      placements: structuredClone(db.placements || []),
-      batches: structuredClone(db.batches || []),
+      data: {
+        students: db.students || [],
+        sessions: db.sessions || [],
+        attendance: db.attendance || [],
+        placements: db.placements || [],
+        batches: db.batches || [],
+      },
+      notModified: false,
     };
   },
   async create(resource, record) {

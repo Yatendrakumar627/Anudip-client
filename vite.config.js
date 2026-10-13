@@ -13,15 +13,27 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@mantine/core',
+      '@mantine/hooks',
+      '@mantine/notifications',
+      '@tabler/icons-react',
+      'dayjs',
+    ],
+  },
   build: {
     chunkSizeWarningLimit: 1000,
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks: {
           mantine: ['@mantine/core', '@mantine/hooks', '@mantine/notifications'],
           icons: ['@tabler/icons-react'],
-          xlsx: ['xlsx'],
-          vendor: ['react', 'react-dom', 'react-router-dom', 'papaparse', 'dayjs'],
+          vendor: ['react', 'react-dom', 'react-router-dom', 'dayjs'],
         },
       },
     },

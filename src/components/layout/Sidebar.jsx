@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, startTransition } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { preloadRoute } from '../../utils/routePreloader';
 import {
   ActionIcon,
   Badge,
@@ -57,12 +58,15 @@ function Sidebar({
   const isExpanded = !isCollapsed || isHovered;
 
   const handleNav = (path, item = null) => {
+    preloadRoute(path);
     if (item?.requiresAdmin && !isAdmin) {
       openLoginModal(path);
       closeMobile?.();
       return;
     }
-    navigate(path);
+    startTransition(() => {
+      navigate(path);
+    });
     closeMobile?.();
   };
 
@@ -89,6 +93,7 @@ function Sidebar({
             className="brand-lockup"
             style={{ cursor: 'pointer' }}
             onClick={() => handleNav('/lms-credential')}
+            onMouseEnter={() => preloadRoute('/lms-credential')}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => e.key === 'Enter' && handleNav('/lms-credential')}
@@ -173,6 +178,9 @@ function Sidebar({
                       isExpanded ? 'nav-item-expanded' : 'nav-item-collapsed'
                     }`}
                     onClick={() => handleNav(item.path, item)}
+                    onMouseEnter={() => preloadRoute(item.path)}
+                    onFocus={() => preloadRoute(item.path)}
+                    onTouchStart={() => preloadRoute(item.path)}
                     aria-label={item.label}
                   >
                     {isActive && <span className="nav-active-indicator" />}

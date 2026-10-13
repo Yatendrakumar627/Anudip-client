@@ -59,7 +59,6 @@ import {
 } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
 import ImportEnrollmentModal from './ImportEnrollmentModal';
 import {
   downloadSampleRosterExcel,
@@ -1423,8 +1422,9 @@ export default function DynamicBatchTable({
   };
 
   // --- EXCEL & CSV IMPORT & EXPORT ---
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (!currentBatch) return;
+    const XLSX = await import('xlsx');
     const exportData = rows.map((row) => {
       const obj = {};
       columns.forEach((col) => {

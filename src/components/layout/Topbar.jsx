@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, startTransition } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { preloadRoute } from '../../utils/routePreloader';
 import {
   ActionIcon,
   Avatar,
@@ -119,12 +120,15 @@ export default function Topbar({
 
   // Quick navigation helper
   const handleNavigate = (path, requiresAdmin = false) => {
+    preloadRoute(path);
     if (requiresAdmin && !isAdmin) {
       setSpotlightOpen(false);
       openLoginModal(path);
       return;
     }
-    navigate(path);
+    startTransition(() => {
+      navigate(path);
+    });
     setSpotlightOpen(false);
     setNotifPopoverOpen(false);
   };
@@ -451,6 +455,8 @@ export default function Topbar({
                       onClick={() => {
                         if (item.link) handleNavigate(item.link);
                       }}
+                      onMouseEnter={() => item.link && preloadRoute(item.link)}
+                      onFocus={() => item.link && preloadRoute(item.link)}
                       style={{
                         display: 'flex',
                         gap: 11,
@@ -493,6 +499,8 @@ export default function Topbar({
                 color="indigo"
                 radius="md"
                 onClick={() => handleNavigate('/lms-credential')}
+                onMouseEnter={() => preloadRoute('/lms-credential')}
+                onFocus={() => preloadRoute('/lms-credential')}
                 leftSection={<IconSchool size={14} />}
               >
                 Go to LMS Student Portal
@@ -673,7 +681,11 @@ export default function Topbar({
                         borderRadius: 8,
                         transition: 'background 0.15s ease',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+                      onMouseEnter={(e) => {
+                        preloadRoute(p.path);
+                        e.currentTarget.style.background = '#f8fafc';
+                      }}
+                      onFocus={() => preloadRoute(p.path)}
                       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >
                       <Group gap="sm">

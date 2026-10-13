@@ -5,27 +5,29 @@ import { api } from './api';
 import { getPageMeta } from './constants/navigation';
 import { useWorkspaceData } from './hooks/useWorkspaceData';
 import { showError } from './utils/notifications';
+import { preloadAllRoutesIdle, preloadRoute } from './utils/routePreloader';
 
 // Layout Components
 import Sidebar from './components/layout/Sidebar';
 import Topbar from './components/layout/Topbar';
 import Footer from './components/layout/Footer';
+import LoadingScreen, { TopProgressBar } from './components/common/LoadingScreen';
 
 // Modals
-import RecordModal from './components/modals/RecordModal';
 import DeleteModal from './components/common/DeleteModal';
+const RecordModal = React.lazy(() => import('./components/modals/RecordModal'));
 
-// Pages
-import OverviewPage from './pages/overview';
-import LmsPortalPage from './pages/lms-portal';
-import QuizPage from './pages/quiz';
-import BatchesPage from './pages/batches';
-import StudentsPage from './pages/students';
-import SessionsPage from './pages/sessions';
-import AttendancePage from './pages/attendance';
-import PlacementsPage from './pages/placements';
-import SettingsPage from './pages/settings';
-import BetaFeaturePage from './pages/beta/BetaFeaturePage';
+// Code-split Page Routes (Loaded on demand for fastest initial page load & minimal bundle)
+const OverviewPage = React.lazy(() => import('./pages/overview'));
+const LmsPortalPage = React.lazy(() => import('./pages/lms-portal'));
+const QuizPage = React.lazy(() => import('./pages/quiz'));
+const BatchesPage = React.lazy(() => import('./pages/batches'));
+const StudentsPage = React.lazy(() => import('./pages/students'));
+const SessionsPage = React.lazy(() => import('./pages/sessions'));
+const AttendancePage = React.lazy(() => import('./pages/attendance'));
+const PlacementsPage = React.lazy(() => import('./pages/placements'));
+const SettingsPage = React.lazy(() => import('./pages/settings'));
+const BetaFeaturePage = React.lazy(() => import('./pages/beta/BetaFeaturePage'));
 
 // Security & Authentication
 import { AuthProvider } from './context/AuthContext';
@@ -78,6 +80,24 @@ const DesktopSidebar = React.memo(function DesktopSidebar({
   );
 });
 
+function PageSkeleton() {
+  return (
+    <>
+      <TopProgressBar />
+      <div className="loading-skeleton">
+        <div className="skeleton-title" />
+        <div className="skeleton-subtitle" />
+        <div className="skeleton-grid">
+          {[1, 2, 3, 4].map((item) => (
+            <div key={item} className="skeleton-card" />
+          ))}
+        </div>
+        <div className="skeleton-large" />
+      </div>
+    </>
+  );
+}
+
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -103,6 +123,7 @@ function AppContent() {
     placements,
     batches,
     loading,
+    reload,
     saveRecord,
     deleteRecord,
     deleteMultipleRecords,
@@ -111,6 +132,11 @@ function AppContent() {
     importAttendance,
     syncMeet,
   } = useWorkspaceData();
+
+  // Pre-warm all route chunks in browser memory on idle so sidebar clicks load instantly (0ms)
+  useEffect(() => {
+    preloadAllRoutesIdle();
+  }, []);
 
   const openCreate = (type) => setModal({ type, record: null });
   const openEdit = (type, record) => setModal({ type, record });
@@ -152,25 +178,25 @@ function AppContent() {
   };
 
   const handlePageNavigate = (target) => {
-    if (target.startsWith('/')) {
-      navigate(target);
-    } else {
-      const routeMap = {
-        overview: '/dashboard',
-        dashboard: '/dashboard',
-        credentials: '/lms-credential',
-        'lms-credentials': '/lms-credential',
-        quiz: '/quiz',
-        batches: '/batches',
-        cohorts: '/batches',
-        students: '/students',
-        sessions: '/sessions',
-        attendance: '/attendance',
-        placements: '/placements',
-        settings: '/settings',
-      };
-      navigate(routeMap[target] || `/${target}`);
-    }
+    const routeMap = {
+      overview: '/dashboard',
+      dashboard: '/dashboard',
+      credentials: '/lms-credential',
+      'lms-credentials': '/lms-credential',
+      quiz: '/quiz',
+      batches: '/batches',
+      cohorts: '/batches',
+      students: '/students',
+      sessions: '/sessions',
+      attendance: '/attendance',
+      placements: '/placements',
+      settings: '/settings',
+    };
+    const dest = target.startsWith('/') ? target : (routeMap[target] || `/${target}`);
+    preloadRoute(dest);
+    React.startTransition(() => {
+      navigate(dest);
+    });
     setSearch('');
     setGlobalSearch('');
   };
@@ -262,18 +288,18 @@ function AppContent() {
 
         <div className="content-wrap">
           {loading ? (
-            <div className="loading-skeleton">
-              <div className="skeleton-title" />
-              <div className="skeleton-subtitle" />
-              <div className="skeleton-grid">
-                {[1, 2, 3, 4].map((item) => (
-                  <div key={item} className="skeleton-card" />
-                ))}
-              </div>
-              <div className="skeleton-large" />
-            </div>
+            <LoadingScreen
+              title="Anudip Training Hub"
+              subtitle="Loading active cohorts, student directory & LMS data..."
+              onRetry={reload}
+              onUseDemo={() => {
+                localStorage.removeItem('anudip_ws_etag_v3');
+                window.location.reload();
+              }}
+            />
           ) : (
-            <Routes>
+            <React.Suspense fallback={<PageSkeleton />}>
+              <Routes>
               {/* Root redirects to /lms-credential */}
               <Route path="/" element={<Navigate to="/lms-credential" replace />} />
 
@@ -430,6 +456,7 @@ function AppContent() {
               {/* Catch-all 404 Route */}
               <Route path="*" element={<Navigate to="/lms-credential" replace />} />
             </Routes>
+          </React.Suspense>
           )}
 
           <Footer orgName={orgName} demoMode={api.demoMode} />
@@ -439,16 +466,20 @@ function AppContent() {
       {/* Modals */}
       <AdminAuthModal />
 
-      <RecordModal
-        opened={!!modal}
-        onClose={() => setModal(null)}
-        type={modal?.type || 'student'}
-        record={modal?.record}
-        students={students}
-        sessions={sessions}
-        batches={batches}
-        onSave={handleSave}
-      />
+      {modal && (
+        <React.Suspense fallback={null}>
+          <RecordModal
+            opened={!!modal}
+            onClose={() => setModal(null)}
+            type={modal?.type || 'student'}
+            record={modal?.record}
+            students={students}
+            sessions={sessions}
+            batches={batches}
+            onSave={handleSave}
+          />
+        </React.Suspense>
+      )}
 
       <DeleteModal
         target={deleteTarget}
