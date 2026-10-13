@@ -231,3 +231,5 @@ export function useAdminAuth() {
   }
   return context;
 }
+
+export const useAuth = useAdminAuth;

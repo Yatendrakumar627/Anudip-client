@@ -1,5 +1,6 @@
 export { default as OverviewPage } from './overview';
 export { default as LmsPortalPage } from './lms-portal';
+export { default as QuizPage } from './quiz';
 export { default as BatchesPage } from './batches';
 export { default as StudentsPage } from './students';
 export { default as SessionsPage } from './sessions';

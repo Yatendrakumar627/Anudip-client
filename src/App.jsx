@@ -18,6 +18,7 @@ import DeleteModal from './components/common/DeleteModal';
 // Pages
 import OverviewPage from './pages/overview';
 import LmsPortalPage from './pages/lms-portal';
+import QuizPage from './pages/quiz';
 import BatchesPage from './pages/batches';
 import StudentsPage from './pages/students';
 import SessionsPage from './pages/sessions';
@@ -158,8 +159,8 @@ function AppContent() {
         overview: '/dashboard',
         dashboard: '/dashboard',
         credentials: '/lms-credential',
-        'lms-credential': '/lms-credential',
         'lms-credentials': '/lms-credential',
+        quiz: '/quiz',
         batches: '/batches',
         cohorts: '/batches',
         students: '/students',
@@ -298,7 +299,7 @@ function AppContent() {
                 }
               />
 
-              {/* LMS Student Portal & Credentials */}
+               {/* LMS Student Portal & Credentials */}
               <Route
                 path="/lms-credential"
                 element={
@@ -312,6 +313,10 @@ function AppContent() {
               />
               <Route path="/lms-credentials" element={<Navigate to="/lms-credential" replace />} />
               <Route path="/lms-portal" element={<Navigate to="/lms-credential" replace />} />
+
+              {/* Quiz */}
+              <Route path="/quiz" element={<QuizPage batches={batches} />} />
+
 
               {/* Batches / Cohorts Management (ONLY ADMIN ACCESS) */}
               <Route

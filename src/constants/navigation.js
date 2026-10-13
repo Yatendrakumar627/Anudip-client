@@ -1,6 +1,7 @@
 import {
   IconBriefcase,
   IconCalendarEvent,
+  IconHelpCircle,
   IconLayoutDashboard,
   IconSchool,
   IconSettings,
@@ -11,6 +12,7 @@ import {
 
 export const navItems = [
   { id: 'credentials', path: '/lms-credential', label: 'LMS Portal', icon: IconSchool, group: 'WORKSPACE' },
+  { id: 'quiz', path: '/quiz', label: 'Quiz', icon: IconHelpCircle, group: 'WORKSPACE' },
   { id: 'batches', path: '/batches', label: 'Batches', icon: IconUsersGroup, group: 'WORKSPACE', requiresAdmin: true },
   { id: 'students', path: '/students', label: 'Students', icon: IconUsers, group: 'WORKSPACE', requiresAdmin: true },
   { id: 'overview', path: '/dashboard', label: 'Overview', icon: IconLayoutDashboard, group: 'WORKSPACE', requiresAdmin: true },
@@ -32,6 +34,12 @@ export const pageMeta = {
     title: 'LMS Student Portal',
     subtitle: 'Access official Anudip LMS credentials, copy login details, and launch learning courses.',
     eyebrow: 'ANUDIP LMS & CREDENTIALS',
+  },
+  '/quiz': {
+    id: 'quiz',
+    title: 'Quiz',
+    subtitle: 'Take skill assessments, track your progress, and review answers for every module.',
+    eyebrow: 'LEARNING ACTIVITIES',
   },
   '/batches': {
     id: 'batches',

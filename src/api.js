@@ -284,4 +284,148 @@ export const api = {
     if (isDemo) return { configured: false, demo: true };
     return request('/api/integrations/google/status');
   },
+  // Quiz Rooms API
+  async listQuizRooms() {
+    if (!isDemo) return request('/api/quiz-rooms');
+    const db = localDb();
+    const now = new Date();
+    // Auto-delete expired rooms after 48 hours
+    db.quizRooms = (db.quizRooms || []).filter((r) => !r.expiresAt || new Date(r.expiresAt) > now);
+    saveDb(db);
+    return structuredClone(db.quizRooms);
+  },
+  async getQuizRoomByCode(code) {
+    if (!isDemo) return request(`/api/quiz-rooms/code/${encodeURIComponent(code)}`);
+    const db = localDb();
+    const now = new Date();
+    db.quizRooms = (db.quizRooms || []).filter((r) => !r.expiresAt || new Date(r.expiresAt) > now);
+    saveDb(db);
+    const room = (db.quizRooms || []).find((r) => String(r.roomCode).toUpperCase() === String(code).toUpperCase());
+    if (!room) throw new Error(`Quiz room with code "${code}" was not found or has expired after 48 hours.`);
+    return {
+      id: room.id,
+      title: room.title,
+      roomCode: room.roomCode,
+      description: room.description || '',
+      batch: room.batch || '',
+      timeLimitMinutes: room.timeLimitMinutes || 0,
+      isActive: Boolean(room.isActive),
+      allowReview: Boolean(room.allowReview),
+      expiresAt: room.expiresAt,
+      totalQuestions: (room.questions || []).length,
+      questions: (room.questions || []).map((q) => ({
+        id: q.id,
+        question: q.question,
+        options: q.options,
+        points: q.points || 1,
+      })),
+    };
+  },
+  async getQuizRoom(id) {
+    if (!isDemo) return request(`/api/quiz-rooms/${id}`);
+    const db = localDb();
+    const room = (db.quizRooms || []).find((r) => r.id === id);
+    if (!room) throw new Error('Quiz room not found.');
+    return structuredClone(room);
+  },
+  async createQuizRoom(record) {
+    if (!isDemo) return request('/api/quiz-rooms', { method: 'POST', body: JSON.stringify(record) });
+    const db = localDb();
+    if (!db.quizRooms) db.quizRooms = [];
+    const saved = {
+      ...record,
+      id: record.id || id(),
+      submissions: record.submissions || [],
+      expiresAt: record.expiresAt || new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+    };
+    db.quizRooms.unshift(saved);
+    saveDb(db);
+    return structuredClone(saved);
+  },
+  async updateQuizRoom(roomId, record) {
+    if (!isDemo) return request(`/api/quiz-rooms/${roomId}`, { method: 'PUT', body: JSON.stringify(record) });
+    const db = localDb();
+    const index = (db.quizRooms || []).findIndex((r) => r.id === roomId);
+    if (index < 0) throw new Error('Quiz room not found.');
+    db.quizRooms[index] = { ...db.quizRooms[index], ...record, id: roomId };
+    saveDb(db);
+    return structuredClone(db.quizRooms[index]);
+  },
+  async deleteQuizRoom(roomId) {
+    if (!isDemo) return request(`/api/quiz-rooms/${roomId}`, { method: 'DELETE' });
+    const db = localDb();
+    db.quizRooms = (db.quizRooms || []).filter((r) => r.id !== roomId);
+    saveDb(db);
+    return { success: true };
+  },
+  async submitQuizRoom(code, payload) {
+    if (!isDemo) return request(`/api/quiz-rooms/code/${encodeURIComponent(code)}/submit`, { method: 'POST', body: JSON.stringify(payload) });
+    const db = localDb();
+    const room = (db.quizRooms || []).find((r) => String(r.roomCode).toUpperCase() === String(code).toUpperCase());
+    if (!room) throw new Error(`Quiz room with code "${code}" not found.`);
+    if (!room.isActive) throw new Error('This quiz room is currently closed for submissions.');
+
+    let score = 0;
+    const questions = room.questions || [];
+    const answers = payload.answers || {};
+    questions.forEach((q) => {
+      if (answers[q.id] !== undefined && Number(answers[q.id]) === Number(q.answer)) {
+        score++;
+      }
+    });
+    const totalQuestions = questions.length;
+    const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
+    const sub = {
+      id: id(),
+      studentName: payload.studentName,
+      studentEmail: payload.studentEmail || '',
+      score,
+      totalQuestions,
+      percentage,
+      answers,
+      timeTakenSeconds: payload.timeTakenSeconds || 0,
+      submittedAt: new Date().toISOString(),
+    };
+    if (!room.submissions) room.submissions = [];
+    room.submissions.unshift(sub);
+    saveDb(db);
+
+    return {
+      success: true,
+      score,
+      totalQuestions,
+      percentage,
+      isPassing: score >= Math.ceil(totalQuestions / 2),
+      submission: sub,
+      breakdown: questions.map((q) => ({
+        id: q.id,
+        question: q.question,
+        options: q.options,
+        selectedAnswer: answers[q.id] ?? null,
+        correctAnswer: q.answer,
+        isCorrect: answers[q.id] !== undefined && Number(answers[q.id]) === Number(q.answer),
+        explanation: q.explanation || '',
+      })),
+    };
+  },
+  async deleteQuizSubmission(roomId, submissionId) {
+    if (!isDemo) return request(`/api/quiz-rooms/${roomId}/submissions/${submissionId}`, { method: 'DELETE' });
+    const db = localDb();
+    const room = (db.quizRooms || []).find((r) => r.id === roomId);
+    if (room && room.submissions) {
+      room.submissions = room.submissions.filter((s) => s.id !== submissionId && s._id !== submissionId);
+      saveDb(db);
+    }
+    return { success: true };
+  },
+  async clearQuizSubmissions(roomId) {
+    if (!isDemo) return request(`/api/quiz-rooms/${roomId}/submissions`, { method: 'DELETE' });
+    const db = localDb();
+    const room = (db.quizRooms || []).find((r) => r.id === roomId);
+    if (room) {
+      room.submissions = [];
+      saveDb(db);
+    }
+    return { success: true };
+  },
 };
